@@ -8,11 +8,11 @@
     margin: auto;
     text-align: left;
     font-weight: 300;
-    font-family: 'Averia Serif Libre', serif;
+    font-family: 'Cardo', serif;
     color: #121212;
   }
   h1, h2, h3, h4 {
-    font-family: 'Fredoka One', sans-serif;
+    font-family: 'Averia Serif Libre', serif;
   }
 </style>
 <title>CS 184 Rasterizer</title>
@@ -32,7 +32,9 @@
 <div>
 
 <h2 align="middle">Overview</h2>
-<p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the project.</p>
+<p> What are the challenges of displaying an image on a screen? Much of computer graphics we take for granted--how exactly are 3-dimensional spaces mapped (convincingly and quickly) onto a 2-d plane? How can we deal with different resolutions of images, and more interestingly, how does our approach change when dealing with graphics and viewpoints that move?
+This project begins with the fundamental problems of coloring pixels in a frame buffer and rendering triangles. We then explore supersampling as an anti-aliasing method, as well as transformations on shapes as a tool for creating complex graphics efficiently. Lastly, we'll see how barycentric coordinates can be used to map colors and textures onto on-screen shapes, leveraging techniques like bilinear sampling and mipmaps.
+ </p>
 
 <h2 align="middle">Section I: Rasterization</h2>
 
