@@ -14,8 +14,10 @@
   h1, h2, h3, h4 {
     font-family: 'Averia Serif Libre', serif;
   }
-  p {
+  div.text {
     width: 500px;
+    text-indent: 50px;
+    margin: auto;
   }
 </style>
 <title>CS 184 Rasterizer</title>
@@ -32,7 +34,7 @@
 
 <br><br>
 
-<div>
+<div class="text">
 
 <h2 align="middle">Overview</h2>
 <p> What are the challenges of displaying an image on a screen? Much of computer graphics we take for granted&mdash;how exactly are 3-dimensional spaces mapped (convincingly and quickly) onto a 2-d plane? How can we deal with different resolutions of images, and more interestingly, how does our approach change when dealing with graphics and viewpoints that move?
@@ -81,6 +83,7 @@ will only explore pixels within the triangle's bounding box.
 </br>
 Here are some results we get:
 </p>
+</div>
 
 <div align="middle">
   <table style="width=100%">
@@ -97,7 +100,7 @@ Here are some results we get:
   </table>
 </div>
 
-
+<div class="text">
 <h3 align="middle">Part 2: Antialiasing triangles</h3>
 
 
@@ -122,6 +125,6 @@ Here are some results we get:
 <p>If you are not participating in the optional art competition, don't worry about this section!</p>
 
 <h3 align="middle">Part 7: Draw something interesting!</h3>
-
+</div>
 </body>
 </html>
