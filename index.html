@@ -32,7 +32,7 @@
 <div>
 
 <h2 align="middle">Overview</h2>
-<p> What are the challenges of displaying an image on a screen? Much of computer graphics we take for granted--how exactly are 3-dimensional spaces mapped (convincingly and quickly) onto a 2-d plane? How can we deal with different resolutions of images, and more interestingly, how does our approach change when dealing with graphics and viewpoints that move?
+<p> What are the challenges of displaying an image on a screen? Much of computer graphics we take for granted&mdash;how exactly are 3-dimensional spaces mapped (convincingly and quickly) onto a 2-d plane? How can we deal with different resolutions of images, and more interestingly, how does our approach change when dealing with graphics and viewpoints that move?
 This project begins with the fundamental problems of coloring pixels in a frame buffer and rendering triangles. We then explore supersampling as an anti-aliasing method, as well as transformations on shapes as a tool for creating complex graphics efficiently. Lastly, we'll see how barycentric coordinates can be used to map colors and textures onto on-screen shapes, leveraging techniques like bilinear sampling and mipmaps.
  </p>
 
@@ -45,26 +45,36 @@ This project begins with the fundamental problems of coloring pixels in a frame 
   <li>If a pixel has nonzero area, then which part of it's area do we use as a representative of the entire pixel?</li>
   <li>Given a coordinate and the vertices of a triangle, how can we tell if the coordinate lies within the triangle?</li>
 </ul>
-To deal with the first problem, we'll first go with the naive approach of using the center of each pixel as its sole representative. Dealing with the second problem requires some basic coordinate geometry; here, the internet offers a variety of solutions:
+To deal with the first problem, we'll first go with the naive approach of using the center of each pixel as its sole representative. 
+</p>
+
+<h4 align="middle">Some Geometry</h4>
+<p>
+Dealing with the second problem requires some basic coordinate geometry; here, the internet offers a variety of solutions:
 <ul>
-  <li>Testing if the point lies inside the half-plane of each of the triangle's edges--this is the method we will use.</li>
+  <li>Testing if the point lies inside the half-plane of each of the triangle's edges&mdash;this is the method we will use.</li>
   <li>Given triangle vertices ABC and coordinate X, test if area(ABC) = area(ABX) + area(XBC) + area(AXC). There are off-the-shelf formulas for calculating area.</li>
-  <li>Use barycentric coordinates--this'll be explained further in Part 4.</li>
+  <li>Use barycentric coordinates&mdash;this'll be explained further in Part 4.</li>
   <li>"Find the vectors connecting the point to each of the triangle's three vertices and sum the angles between those vectors. If the sum of the angles is 2*pi then the point is inside the triangle." (<a href="https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle" target="_blank">source</a>)
 </ul>
-Going with the first approach means first finding the vectors that represent the edges of the triangle. From each edge vector we can get it's normal vector (oriented toward inside the triangle--a key distinction). Then we can compute the cross-product of each normal vector with the vector from a point on the edge to the given coordinate. If this cross-product is positive, then the coordinate lies on the correct side of the edge (within 90 degrees of the normal). If it's negative, it's on the wrong side; and if it's zero, then it lies exactly 90 degrees from the normal.
+Going with the first approach means first finding the vectors that represent the edges of the triangle. From each edge vector we can get it's normal vector (oriented toward inside the triangle&mdash;a key distinction). Then we can compute the cross-product of each normal vector with the vector from a point on the edge to the given coordinate. If this cross-product is positive, then the coordinate lies on the correct side of the edge (within 90 degrees of the normal). If it's negative, it's on the wrong side; and if it's zero, then it lies exactly 90 degrees from the normal.
+</br>
 However, this approach isn't agnostic to the order in which the triangle's vertices is passed in. If the vertices are given in clockwise order, then the normals we want are on the right side of the edge. If counterclockwise, then they're on the left. To account for this, we'll ensure vertices are in counterclockwise order. If they aren't (which can be determined using <a href="https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order" target="_blank">another formula</a>), then we'll swap the second and third vertices to get counterclockwise order.
+</p>
 
-Alright, so now we can tell if a point is within a triangle. Given a triangle and color, then, we can apply this test to the center of each pixel around the triangle--if the pixel center lies within the triangle, we'll color that pixel. But what does "around the triangle" mean? We wouldn't want to test every pixel on the screen, so instead let's find the bounding box of the given triangle by finding the min and max values of its vertices x and y coordinates. Running a loop like so:
+<h4 align="middle">Algorithm</h4>
+<p>
+Alright, so now we can tell if a point is within a triangle. Given a triangle and color, then, we can apply this test to the center of each pixel around the triangle&mdash;if the pixel center lies within the triangle, we'll color that pixel. But what does "around the triangle" mean? We wouldn't want to test every pixel on the screen, so instead let's find the bounding box of the given triangle by finding the min and max values of its vertices x and y coordinates. Running a loop like so:
 <pre><code>
-  for (x = min_x; x < max_x; x++) {
-    for (y = min_y; y < max_y; y++) {
-      /* Color pixel (x, y) if (x+0.5, y+0.5) lies inside the triangle. */
+for (x = min_x; x < max_x; x++) {
+  for (y = min_y; y < max_y; y++) {
+    /* Color pixel (x, y) if (x+0.5, y+0.5) lies inside the triangle. */
   }
 }
 </code></pre>
 will only explore pixels within the triangle's bounding box.
-
+</br>
+</br>
 Here are some results we get:
 </p>
 
@@ -72,23 +82,12 @@ Here are some results we get:
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/image1.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/part1-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Looks okay.</figcaption>
       </td>
       <td>
-        <img src="images/image2.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/image3.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
-      </td>
-      <td>
-        <img src="images/image4.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/part1-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Maybe not.</figcaption>
       </td>
     </tr>
   </table>
