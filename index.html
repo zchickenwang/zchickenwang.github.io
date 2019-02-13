@@ -92,9 +92,11 @@ for (x = min_x; x < max_x; x++) {
 }
 </code></pre>
 will only explore pixels within the triangle's bounding box.
-</br>
-</br>
-&emsp;Here are some results we get:
+</p>
+
+<h4 align="middle">Results</h4>
+<p>
+Here are some results we get:
 </p>
 </div>
 
@@ -103,11 +105,11 @@ will only explore pixels within the triangle's bounding box.
     <tr>
       <td>
         <img src="images/part1-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">Looks okay.</figcaption>
+        <figcaption align="middle">1a. Lots of triangles--looks pretty good.</figcaption>
       </td>
       <td>
         <img src="images/part1-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">Maybe not.</figcaption>
+        <figcaption align="middle">1b. Hm. Maybe not...</figcaption>
       </td>
     </tr>
   </table>
@@ -115,13 +117,82 @@ will only explore pixels within the triangle's bounding box.
 
 <div class="text">
 <h3 align="middle">Part 2: Antialiasing triangles</h3>
+<p> The magnified shot in image 1b reveals a key weakness in our naive approach. If we only look at the center of each pixel, then our image can be significantly affected by "jaggies", or a lack of smoothness in shapes whose position change rapidly relative to our sampling rate, which in the naive case is simply 1 sample/pixel. In the 1b example, a very thin triangle can cross the centers of pixels somewhat arbitrarily&mdash;even if the triangle covers just under half of the pixel's area, it may not be colored if the center lies outside. This results in the stacatto, stairstep-like scattering of red lines.
+</br>
+One way around this problem is taking more samples in each pixel: supersampling. Here, we first define the number of samples taken per pixel&mdash;let's call this the sample-rate. Furthermore, let's distribute these samples evenly across the pixel (this is the most intuitive distribution, although perhaps giving more weight to samples closer to the center would produce better results).
+</p>
 
+<h4 align="middle">Algorithm</h4>
+<p>
+Now we need to change our algorithm: for each pixel, we'll run through another pair of x, y coordinate loops which traverse sample-rate points. If a point is within the triangle, we won't color the entire pixel, but color that subpixel. After running through the whole pixel, we can determine its color by averaging over all its subpixel colors (where the default is transparent). While this is all pretty straightforward, it's worth noting that type conversions and rounding in C++ gave me a fair bit of struggle.
+</p>
 
+<h4 align="middle">Results</h4>
+<p>
+Here's the same thin triangle edge over increasing sample-rate's:
+</p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/part2-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">2a. The OG, 1 sample/pixel.</figcaption>
+      </td>
+      <td>
+        <img src="images/part2-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">2b. 4 samples/pixel.</figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/part2-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">2c. 9 samples/pixel.</figcaption>
+      </td>
+      <td>
+        <img src="images/part2-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">2d. 16 samples/pixel.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+<p>
+So why does this work? Let's consider a pixel whose top 40% area overlaps with the triangle. In our naive scheme, this pixel would have no color. Now, if we're using a sample rate of 9 and 4/9 of them lie within the triangle, then this pixel will be colored with 4/9'ths saturation. Viewed from afar, we get the impression that the pixel is half-colored, giving a much smoother look.
+</p>
 
 <h3 align="middle">Part 3: Transforms</h3>
+<p>
+Transforms are useful because a shape which is used in many different places, but is oriented or stretched in different ways, can be represented just once, and the others created via transforms on the original. We implemented three of the most fundamental: translations, scaling, and rotations. Using homogenous coordinates (where an additional dimension is added to incorporate translations), we created matrices for each transform. Input vectors (representing either points or directions) are multiplied with a matrix to transform it.
+</br>
+While we won't write out each matrix, they can be easily found <a href="https://en.wikipedia.org/wiki/Transformation_matrix" target="_blank">online</a>.
+</p>
 
+<h4 align="middle">Results</h4>
+<p>
+Here's a simple graphic of a red robot formed using transforms, as well as a version which I manipulated as :
+</p>
+</div>
 
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/part1-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">3a. Beep boop.</figcaption>
+      </td>
+      <td>
+        <img src="images/part1-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">3b. ?</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
+<div class="text">
 <h2 align="middle">Section II: Sampling</h2>
 
 <h3 align="middle">Part 4: Barycentric coordinates</h3>
