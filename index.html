@@ -196,10 +196,86 @@ Here's a simple graphic of a red robot formed using transforms, as well as a ver
 <h2 align="middle">Section II: Sampling</h2>
 
 <h3 align="middle">Part 4: Barycentric coordinates</h3>
+<p>
+So far, our graphics have been greatly limited by having only monochrome triangles. To make a primitive shader, we can assign different colors to each vertex&mdash;this would allow for gradients within the triangle, where each point's color is determined by its position vis-a-vis the vertices.
+</p>
 
+<h4 align="middle">Some More Geometry</h4>
+<p>
+To determine a coordinates position relative to a triangle's vertices, we'll use barycentric coordinates. If we have a triangle ABC and coordinate X, then the barycentric coordinate of X corresponding to vertex A will be the distance between X and the edge BC along the normal of BC which intersects A. In this way, X can be represented by its barycentric coordinates for A, B, and C. Interestingly enough, the three barycentric values will always sum to 1.
+</p>
 
+<h4 align="middle">Results</h4>
+<p>
+The first image below shows our basic triangle with Red, Green, and Blue-valued vertices. With barycentric coordinates, each point inside the triangle is shaded with a weighted blend of the three colors, depending on its distance to each vertex. The second image is a color wheel created using many triangles. Note that in this color wheel, the center point appears greyish-black as it is an even blend of all the primary colors.
+</p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/part4-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4a. Color triangle.</figcaption>
+      </td>
+      <td>
+        <img src="images/part4-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4b. Color wheel.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
 <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+<p>
+What if we wanted to map not colors but textures onto our triangles? We can still leverage barycentric coordiantes&mdash;however now, they will be used to calculate (u, v) coordinates in a texture space, where each vertex has its own (u, v) coordinate instead of a color.
+</br>
+But if we are given a texture, that means it has a certain resolution. If the resolution is the same as that of our screen, then each pixel can be nicely matched with a texel (texture pixel). What then happens if we zoom in or out? If we zoom in, then each texel will encompass several pixels. If we zoom out, each pixel will encompass several texels.
+</p>
 
+<h4 align="middle">Pixel Sampling Methods</h3>
+<p>
+To resolve these imbalances, we'll introduce two methods of pixel sampling. 
+</br>
+The first and simplest is nearest-pixel sampling: here, we just find the texel closest to a given sample (by rounding the sample's (u, v) coordinates).
+</br>
+The second is bilinear sampling. Here, we consider the 4 texels closest to a given sample (by getting the floor and ceiling of its (u, v) coordinates), then performing linear interpolation across the colors of those four texels to get the sample color. Linear interpolation between two texels means a linear combination of their colors, where each is weighted by its distance to the given sample point (proportional to the total distance between the two texels).
+</p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/part5-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">5a. Nearest-pixel, sample-rate of 1.</figcaption>
+      </td>
+      <td>
+        <img src="images/part5-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">5b. Bilinear, sample-rate of 1.</figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/part5-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">5c. Nearest-pixel, sample-rate of 16.</figcaption>
+      </td>
+      <td>
+        <img src="images/part5-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">5d. Bilinear, sample-rate of 16.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+<p>
+From these images, we can see that bilinear sampling does far better than nearest-pixel under low sample-rates and magnification, and particularly better if the texture has sharp changes in color (like the lat-long markings on the map). This makes sense, because if there are many samples/texel, then nearest-pixel sampling will just make each sample snap to the closest texel color, whereas bilinear sampling will smooth out differences between adjacent texels (in a manner not dissimilar to supersampling).
+</br>
+We can also see that using a sample-rate of 16 greatly mutes the differences between the two sampling methods. Nonetheless, there are still noticably-sharper edges in 5c, which results in a more pixelated look.
+</p>
 
 <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
 
