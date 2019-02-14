@@ -278,9 +278,39 @@ We can also see that using a sample-rate of 16 greatly mutes the differences bet
 </p>
 
 <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
-
 <p>
+Although pixel sampling does a good job of mapping textures onto the screen, it's not very flexible with image resolutions that are different from the texture resolution. In particular, textured objects that appear far in the distance will have much lower resolution on screen. In other words, there can be many, many texels per pixel. If we followed the previous pixel sampling methods, then we'd miss out on a bunch of the texels: this is bad. The goal of level sampling, then, is to make sampling textures at a much lower resolution than the texture itself more efficient. 
+</br>
+The original, full-resolution mipmap is stored first, in what's called level 0. Progressive mipmap levels store compressed versions of the texture, where a texel at level n represents 2 texels at level (n-1).
+</br>
+In this way, if we know a pixel of a minified texture will cover the space of 8 texels in the original texture, we can simply use the mipmap at level 3, instead of trying to interpolate across 8 full-resolution texels for each pixel.
 </p>
+
+<h4 align="middle">Barycentric Coordinates Revisited</h4>
+<p>
+But how do we know how large a pixel is relative to the original texture (especially when the shapes on screen may represent warped versions of the texture, like in perspective)?
+</br>
+For this project, we'll use an approximation. For each sample (x, y), we'll also compute the barycentric coordinates of the points (x+a, y) and (y+a, x), where a represents the distance between each supersample (a = 1/sample-rate). This gives us a pseudo-gradient at the sample's location, which can then be translated into the texture's (u, v) space to give an estimate of how many texels in the x and y direction that this pixel will represent.
+</br>
+Once we know the number of texels that a pixel represents, finding the mipmap level is just taking the log base 2 of that number.
+</p>
+
+<h4 align="middle">Level Sampling Methods</h4>
+<p>
+However, taking a log will rarely produce an integer. When it doesn't, how do we know which mipmap to index into?
+</br>
+Similar to with Pixel Sampling, one solution is finding the nearest level. This means rounding the result of the log (truncating if the result rounds out of bounds).
+</br>
+While nearest-level is simple, it fails when an image on screen contains a texture at different mipmap levels (which is often the case: a brick wall receding into the distance could go through several mipmaps). If we use nearest-level here, there will be sharp edges marking the transition between mipmaps of different resolutions.
+</br>
+To deal with this, we can use linear level sampling, which interpolates linearly between the two closest mipmap levels. This is the same interpolation we did with bilinear pixel sampling, and produces smooth transitions between mipmaps.
+</p>
+
+<h4 align="middle">Results</h4>
+<p>
+Here's an image of a smiley face texture rendered using combinations of nearest-pixel and bilinear pixel sampling with level 0 (full-resolution) and nearest-level sampling:
+</p>
+
 </div>
 
 <div align="middle">
@@ -310,7 +340,26 @@ We can also see that using a sample-rate of 16 greatly mutes the differences bet
 </div>
 
 <div>
-
+<h4 align="middle">Comparison Between Methods</h4>
+<p>
+We have now at our hands choices in supersampling, pixel sampling, and level sampling. While each can help make our image look smooth, what are their costs?
+</br>
+Supersampling takes the most time, as we are increasing the number of samples we take by a factor of sample-rate. If we also use different pixel/level sampling methods, the cost of those methods would grow by the same factor, as we perform the pixel/level sampling procedure for each sample. Our memory usage would also grow, as each pixel would have to keep track of sample-rate subpixel colors (with the additional computation of averaging over those colors).
+</br>
+</br>
+Pixel sampling comes with the added cost of computing barycentric coordinates and converting them to the (u, v) system (all constant so far given constant time arithmetic). However, using bilinear sampling would require checking 4 texels / sample, which although constitues an extra factor of 4, does not change our big-O time complexity as it is a constant. Pixel sampling also doesn't increase space complexity. 
+</br>
+If we're rendering a zoomed-in image or using a very high sample-rate compared to the texture resolution, then multiples samples would be computed using every 4 texels. In this case, our rendered texture would look much better with bilinear sampling, and caching may be a useful tool.
+</br>
+If we are rendering a zoomed-out image of a texture (where there are many texels/sample), we likely wouldn't consider all the available texels (unless they are neighbors of a sample). This helps cut down time but reduces image quality, since ignored texels may be vital to the texture content.
+</br>
+</br>
+What about level sampling? First off, the mipmap array takes both computation to build out and space to hold. While the extra space needed is just linear w.r.t. the original texture size, the time needed to compute compressed versions is the original texture size * the number of levels. While we also require dx and dy estimations, these add just a constant factor of 3 to our existing time complexity.
+</br>
+But while more levels means more precomputation, they help make rendering zoomed-out textures much faster. In a sense, the levels can be seen as caching lower-resolution versions of the texture, instead of computing them on-the-fly. This way, if we have multiple texels/sample, we can simply look at a higher-level mipmap&mdash;this will leave the issue of compressing the texture to the mipmap generation process rather than the pixel sampling method, so the overall quality will be much higher. However it's worth noting that pixel and level sampling are still somewhat independent: bilinear sampling will still look at the closest 4 texels in whichever mipmap we use. However, if our mipmap resolution is close to the sampling resolution, we may be able to use nearest-pixel sampling instead and avoid the cost of bilinear interpolation.
+</br>
+Further, mipmaps do not help at all when we're zooming in, or when the sampling resolution is much higher than that of the texture. In this case, we'd be limited by the level-0 mipmap resolution, and any level sampling would be the same as level-0 sampling.
+</p>
 </div>
 </body>
 </html>
