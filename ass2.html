@@ -54,7 +54,7 @@ This content can be found on my Github Page: zchickenwang.github.io.
 </p>
 
 <h2 align="middle">Overview</h2>
-<p> &emsp;Polygon meshes are used to explicitly define shapes in space, and are frequently used as a model between the scanning and displaying phases of real-world objects (think Google Earth, 3D printing). Why meshes? Well, their explicit nature makes interacting with meshes a little more modular, and moreover, both the topology and geometry of the mesh can be adjusted according to resolution, POV, and error-correction. To store meshes on the computer, we'll use a 'half-edge' structure which adds some redundancy but makes modifying and traversing the mesh fairly simple.
+<p> &emsp;Polygon meshes are used to explicitly define shapes in space, and are frequently used as a model between the scanning and displaying phases of real-world objects (think Google Earth, 3D printing). Why meshes? Well, their explicit nature makes interacting with meshes a little more modular, and moreover, both the topology and geometry of the mesh can be adjusted according to resolution, POV, and error-correction. To store meshes on the computer, we'll use a 'half-edge' structure which adds some redundancy, but makes modifying and traversing the mesh fairly simple (as well as providing spatial locality).
 <br>
 &emsp;At first, we'll focus on the problem of smooth curves. In particular, we'll implement Bezier curves and surfaces. Next we'll move onto aspects of mesh subdivision, like area-weighted normals, edge manipulation, and upsampling.
 </p>
