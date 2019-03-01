@@ -228,23 +228,19 @@ The actual implementation involves using the half-edge structure to our advantag
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/part5-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">5a. Nearest-pixel, sample-rate of 1.</figcaption>
+        <img src="images/proj2/p4-1.png" align="middle" height="400px"/>
+        <figcaption align="middle">4a. Look, I just flipped the switch.</figcaption>
       </td>
       <td>
-        <img src="images/part5-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">5b. Bilinear, sample-rate of 1.</figcaption>
+        <img src="images/proj2/p4-2.png" align="middle" height="400px"/>
+        <figcaption align="middle">4b. (flip flip). </figcaption>
       </td>
     </tr>
     </br>
     <tr>
       <td>
-        <img src="images/part5-3.png" align="middle" width="400px"/>
-        <figcaption align="middle">5c. Nearest-pixel, sample-rate of 16.</figcaption>
-      </td>
-      <td>
-        <img src="images/part5-4.png" align="middle" width="400px"/>
-        <figcaption align="middle">5d. Bilinear, sample-rate of 16.</figcaption>
+        <img src="images/proj2/p4-3.png" align="middle" height="400px"/>
+        <figcaption align="middle">4c. More flips.</figcaption>
       </td>
     </tr>
   </table>
@@ -259,7 +255,7 @@ The actual implementation involves using the half-edge structure to our advantag
 <br>
 &emsp;Our implementation here follows the same approach as with edge flipping: we first list out all variables involved, adding new variables for new faces, edges, and vertex. Then we imagine this area of the mesh with a split edge, and reassign all the variables accordingly. This approach worked the first time here as well (props to the method).
 <br>
-The images below describe edge splitting as well as a combination of flips and switches.
+The images below describe edge splitting as well as a combination of flips and splits.
 </p>
 </div>
 
@@ -267,23 +263,23 @@ The images below describe edge splitting as well as a combination of flips and s
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/part5-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">5a. Nearest-pixel, sample-rate of 1.</figcaption>
+        <img src="images/proj2/p5-1.png" align="middle" height="400px"/>
+        <figcaption align="middle">5a. Edge.</figcaption>
       </td>
       <td>
-        <img src="images/part5-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">5b. Bilinear, sample-rate of 1.</figcaption>
+        <img src="images/proj2/p5-2.png" align="middle" height="400px"/>
+        <figcaption align="middle">5b. Split.</figcaption>
       </td>
     </tr>
     </br>
     <tr>
       <td>
-        <img src="images/part5-3.png" align="middle" width="400px"/>
-        <figcaption align="middle">5c. Nearest-pixel, sample-rate of 16.</figcaption>
+        <img src="images/proj2/p5-3.png" align="middle" height="400px"/>
+        <figcaption align="middle">5c. Cube.</figcaption>
       </td>
       <td>
-        <img src="images/part5-4.png" align="middle" width="400px"/>
-        <figcaption align="middle">5d. Bilinear, sample-rate of 16.</figcaption>
+        <img src="images/proj2/p5-4.png" align="middle" height="400px"/>
+        <figcaption align="middle">5d. Cube with splits and flips.</figcaption>
       </td>
     </tr>
   </table>
@@ -303,7 +299,7 @@ The images below describe edge splitting as well as a combination of flips and s
 
 <h4 align="middle">Results</h4>
 <p>
-&emsp;Here's a series of images of objects undergoing 3 rounds of upsampling.
+&emsp;Here's a series of images of a Torus undergoing upsampling.
 </p>
 
 </div>
@@ -313,22 +309,11 @@ The images below describe edge splitting as well as a combination of flips and s
     <tr>
       <td>
         <img src="images/part6-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">6a. Nearest-pixel, Level 0.</figcaption>
+        <figcaption align="middle">6a. Torus.</figcaption>
       </td>
       <td>
         <img src="images/part6-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">6b. Nearest-pixel, Nearest-level.</figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/part6-3.png" align="middle" width="400px"/>
-        <figcaption align="middle">6c. Bilinear, Level 0.</figcaption>
-      </td>
-      <td>
-        <img src="images/part6-4.png" align="middle" width="400px"/>
-        <figcaption align="middle">6d. Bilinear, Nearest-Level.</figcaption>
+        <figcaption align="middle">6b. Upsampled Torus.</figcaption>
       </td>
     </tr>
   </table>
@@ -337,8 +322,27 @@ The images below describe edge splitting as well as a combination of flips and s
 <div class="text">
 <h4 align="middle">What Happens to Sharp Edges and Corners</h4>
 <p>
-&emsp;Due to its approximative nature, Loop Upsampling does not preserve original vertices. This means that the shape becomes more 'rounded', and sharp features will be smoothed out. However, in the images below, we try to preserve a sharp edge of the original cube by repeatedly splitting this edge and the edges on its adjacent faces. This does keep the edge sharp, but distorts the geometry local to that edge.
+&emsp;Due to its approximative nature, Loop Upsampling does not preserve original vertices. This means that the shape becomes more 'rounded', and sharp features will be smoothed out. However, in the images below, we try to preserve a sharp edge of the original torus by repeatedly splitting this edge and the edges on its adjacent faces. This does keep the edge sharp, but distorts the geometry local to that edge.
+</p>
+</div>
 
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/part6-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">6c. Torus with edge splits.</figcaption>
+      </td>
+      <td>
+        <img src="images/part6-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">6d. Upsampled--notice the sharpness is preserved.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<div class="text">
 <h4 align="middle">Loop Subdivison and Asymmetry</h4>
 <p>
 &emsp;From continuously upsampling the cube, we can notice a sort of assymetric deviation. The upsampled cube is no longer symmetric, and contains some odd protrusions. What happened?
@@ -348,5 +352,32 @@ Well, if we examine the original cube, we'll see that each face is split along a
 See below for what happens when we first split each face of the cube into 4, totally symmetric triangles first. The upsampled cube is symmetric!
 </p>
 </div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/part6-5.png" align="middle" width="400px"/>
+        <figcaption align="middle">6e. Cube.</figcaption>
+      </td>
+      <td>
+        <img src="images/part6-6.png" align="middle" width="400px"/>
+        <figcaption align="middle">6f. Upsampled--notice the asymmetry.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/part6-7.png" align="middle" width="400px"/>
+        <figcaption align="middle">6g. Cube with split faces.</figcaption>
+      </td>
+      <td>
+        <img src="images/part6-8.png" align="middle" width="400px"/>
+        <figcaption align="middle">6h. Upsampled--Mmm...</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
 </body>
 </html>
