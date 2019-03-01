@@ -74,9 +74,9 @@ Due to the systematic nature of this algorithm, it is possible to evaluate the c
 
 <h4 align="middle">Results</h4>
 <p>
-Here are some results we get. Images a-e represent consecutive steps in de Casteljau's for a 6-point bezier curve. In each step, we look at the previous step's segments, and find points along those segments that are t'th of the way along the segment. Image f displays the curve we get when we vary t from 0 to 1.
+Here are some results we get. Images a-f represent consecutive steps in de Casteljau's for a 6-point bezier curve. In each step, we look at the previous step's segments, and find points along those segments that are t'th of the way along the segment. Image g displays the curve we get when we vary t from 0 to 1.
 <br>
-In image g, we see what happens when the control points are moved. Then, image h reflects this modified curve evaluated at a different t value.
+In image h, we see what happens when the control points are moved. Then, image i reflects this modified curve evaluated at a different t value.
 </p>
 </div>
 
@@ -84,12 +84,52 @@ In image g, we see what happens when the control points are moved. Then, image h
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/part1-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">1a. Lots of triangles--looks pretty good.</figcaption>
+        <img src="images/proj2/p1-1.png" align="middle" height="400px"/>
+        <figcaption align="middle">1a. Iteration 0: 6 control points.</figcaption>
       </td>
       <td>
-        <img src="images/part1-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">1b. Hm. Maybe not...</figcaption>
+        <img src="images/proj2/p1-2.png" align="middle" height="400px"/>
+        <figcaption align="middle">1b. Iteration 1: 5 points.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj2/p1-3.png" align="middle" height="400px"/>
+        <figcaption align="middle">1c. Iteration 2: 4 points.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj2/p1-4.png" align="middle" height="400px"/>
+        <figcaption align="middle">1d. Iteration 3: 3 points.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj2/p1-5.png" align="middle" height="400px"/>
+        <figcaption align="middle">1e. Iteration 4: 2 points.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj2/p1-6.png" align="middle" height="400px"/>
+        <figcaption align="middle">1f. Iteration 5: 1 point!</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj2/p1-7.png" align="middle" height="400px"/>
+        <figcaption align="middle">1g. Curve obtained from varying t.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj2/p1-8.png" align="middle" height="400px"/>
+        <figcaption align="middle">1h. Different control points.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj2/p1-9.png" align="middle" height="400px"/>
+        <figcaption align="middle">1i. Different t value.</figcaption>
       </td>
     </tr>
   </table>
