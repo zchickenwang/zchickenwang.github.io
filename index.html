@@ -34,7 +34,7 @@
   }
 
 </style>
-<title>CS 184 Rasterizer</title>
+<title>CS 184 Pathtracer</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link href="https://fonts.googleapis.com/css?family=Averia+Serif+Libre|Cardo|Concert+One|Fredoka+One" rel="stylesheet">
 </head>
@@ -43,7 +43,7 @@
 <body>
 
 <h1 align="middle" style="color:#A0522D;">CS 184: Computer Graphics and Imaging, Spring 2019</h1>
-<h1 align="middle" style="color:#DAA520;">Project 2: Mesh Edit</h1>
+<h1 align="middle" style="color:#DAA520;">Project 3: Pathtracer</h1>
 <h2 align="middle" class="pale">Z Wang</h2>
 
 <br><br>
@@ -54,29 +54,36 @@ This content can be found on my Github Page: zchickenwang.github.io.
 </p>
 
 <h2 align="middle">Overview</h2>
-<p> &emsp;Polygon meshes are used to explicitly define shapes in space, and are frequently used as a model between the scanning and displaying phases of real-world objects (think Google Earth, 3D printing). Why meshes? Well, their explicit nature makes interacting with meshes a little more modular, and moreover, both the topology and geometry of the mesh can be adjusted according to resolution, POV, and error-correction. To store meshes on the computer, we'll use a 'half-edge' structure which adds some redundancy, but makes modifying and traversing the mesh fairly simple (as well as providing spatial locality).
+<p> &emsp;In order to render realistic scenes, we need to generate realistic lighting. In this project, we focus on pathtracing: using a simple, particle model of light to mimic the effects of light on a scene.
 <br>
-&emsp;At first, we'll focus on the problem of smooth curves. In particular, we'll implement Bezier curves and surfaces. Next we'll move onto aspects of mesh subdivision, like area-weighted normals, edge manipulation, and upsampling.
+&emsp;We'll start off at a high-level: given a reliable physics model, how do we sample the lighting at each sensor pixel. We then step into to the model, asking questions like 1) how do we know what part of a scene each pixel in a given camera view should represent, 2) how do we know the lighting qualities of a point in the scene (e.g. direct, indirect light), and 3) how can we make these computations efficient? In doing so, we'll gain some insight into the mechanics behind light ray generation and manipulation.
 </p>
 
-<h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+<h2 align="middle">Part I: Ray Generation and Scene Intersection</h2>
 
-<h3 align="middle">Part 1: Bezier Curves with 1D de Casteljau Subdivision</h3>
+<h3 align="middle">Ray Generation</h3>
 
-<p>&emsp;De Casteljau's algorithm is a way to calculate a bezier curve given control points. At each step, the algorithm finds the point along each line segment where the segment breaks into 2 segments whose lengths are proportional to t:1-t (where t is a paramter ranging from 0 to 1). In this way, each step reduces the number of points by 1--if we start out with 3 points, then there are 2 segments connecting the points, and these segments produce 2 points for the next iteration.
+<p>&emsp;At a high-level, we're firing light rays through the camera view. These rays will start at the camera position, pass through a pixel in the sensor plane, and land somewhere in the scene world.  
 <br>
-The algorithm runs until there is only 1 point remaining. Then, this point represents a point along the resulting bezier curve for a given value of t. If we sample values of t, we can find their corresponding positions along the curve.
+In order to make sure each pixel is sampled, we'll generate some fixed number of rays through each pixel: call this ns_aa. As with sampling in rasterization, we have a choice in how to distribute these samples/pixel. With rasterization, we spread the samples uniformly across the pixel area. Here, we'll try randomly picking positions (with a high-enough ns_aa value, this converges to a uniform distribution). 
 <br>
-In our implementation, we'll simplify the logic by writing a method which executes one step of de Casteljau's. We'll keep track of the points resulting from each step of the algorithm, so that a call to this method will just look up the most recent step and iterate from there. Note that this takes up extra space (quadratic w.r.t. the number of control points).
-<br>
-Due to the systematic nature of this algorithm, it is possible to evaluate the curve in much less time by precomputing algebraic formula's that represent all the iterations needed in de Casteljau's to find bezier curve points. While easy parellization and simple math make de Casteljau's very efficient, curves with higher orders of control points or repetition may benefit from an algebraic approach.
+So how exactly is a ray created? After we pick a point on the sensor plane, i.e. a 2D position on the screen, we need to translate this into a 3D position in the world space. We'll do this using the sensor plane's field-of-view bounds, which map the corners of the sensor plane to 3D positions in the scene world. Each ray then 1) starts at the camera position, 2) travels in the direction given by the pixel sample position, and 3) is limited by the bounds of the scene that our current camera position can capture. 
 </p>
 
-<h4 align="middle">Results</h4>
+<h3 align="middle">Primitive Intersection</h3>
+
+<p>&emsp;Once we fire the ray, how can we tell where it lands in the scene? If we consider the scene as being composed of primitive shapes (like in polygon meshes), then we're looking for a way to test if a ray intersects a shape. In this project, we'll examine two basic primitives: triangles and spheres.
+<br>
+To deal with triangles, let's consider one on some object mesh. It'll lie on some plane, so one approach is finding the intersection of the ray on that plane. We can then use existing, 2D methods (like barycentric coordinates) to see if that intersection point lies within the triangle.
+<br>
+In algebraic terms, we have equations for both the path of the ray and the triangle plane (created using the triangle vertices). Solving this system of equations tells us if the ray intersects the plane, and if it does, gives the barycentric coordinates of the intersection point. If these coordinates all lie between 0 and 1, then we know the intersection point lies within the triangle (moreover, we know exactly where--this is necessary for interpolating the surface normal at that point).
+<br>
+What about spheres? We can adopt the same approach: solve the system of equations given by the ray path and the sphere (the sphere given by the set of points with distance radius from the center). This system devolves into a quadratic equation with one unknown (time w.r.t the ray trajectory), which can be easily solved.
+</p>
+
+<h3 align="middle">Results</h3>
 <p>
-Here are some results we get. Images a-f represent consecutive steps in de Casteljau's for a 6-point bezier curve. In each step, we look at the previous step's segments, and find points along those segments that are t'th of the way along the segment. Image g displays the curve we get when we vary t from 0 to 1.
-<br>
-In image h, we see what happens when the control points are moved. Then, image i reflects this modified curve evaluated at a different t value.
+Here are some results we get.
 </p>
 </div>
 
@@ -84,73 +91,60 @@ In image h, we see what happens when the control points are moved. Then, image i
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj2/p1-1.png" align="middle" height="400px"/>
-        <figcaption align="middle">1a. Iteration 0: 6 control points.</figcaption>
+        <img src="images/proj3/1-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">1a. Issa Cow (Render time: 170.8s).</figcaption>
       </td>
       <td>
-        <img src="images/proj2/p1-2.png" align="middle" height="400px"/>
-        <figcaption align="middle">1b. Iteration 1: 5 points.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj2/p1-3.png" align="middle" height="400px"/>
-        <figcaption align="middle">1c. Iteration 2: 4 points.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p1-4.png" align="middle" height="400px"/>
-        <figcaption align="middle">1d. Iteration 3: 3 points.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj2/p1-5.png" align="middle" height="400px"/>
-        <figcaption align="middle">1e. Iteration 4: 2 points.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p1-6.png" align="middle" height="400px"/>
-        <figcaption align="middle">1f. Iteration 5: 1 point!</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj2/p1-7.png" align="middle" height="400px"/>
-        <figcaption align="middle">1g. Curve obtained from varying t.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj2/p1-8.png" align="middle" height="400px"/>
-        <figcaption align="middle">1h. Different control points.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p1-9.png" align="middle" height="400px"/>
-        <figcaption align="middle">1i. Different t value.</figcaption>
+        <img src="images/proj3/1-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">1b. Issa Beetle (Render time: 168.6s).</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-<h3 align="middle">Part 2: Bezier Surfaces with Separable 1D de Casteljau Subdivision</h3>
+<h2 align="middle">Part II: Bounding Volume Hierarchy</h2>
 <p> 
-&emsp;How can we extend bezier curve evaluation to 3 dimensions, where we're building smoothly-curved surfaces?
+&emsp;A massive problem with our naive approach is time complexity. For each ray, we're testing its intersection with every object in the scene.
+  As a result, render time is exponential in the number of objects, making any complex scene impractical.
+  This naive approach is stupid because most of the primitives will lie nowhere near the ray, and we should incoporate this knowledge into the algorithm. One intuitive way
+  to do this is to organize the scene objects into some sort of spatial hierarchy, like with R-trees or KD-trees. In this way, we'll be able to prune
+  the space of primitives that could possibly lie in the current ray's path.
 </br>
-&emsp;In this 3D case, we'll use a standard 4x4 array of control points (16 total). We'll also need 2 t parameters representing 2 axes of variance--let's call these u and v.
+&emsp;The implementation we'll go with is using a Bounding Volume Hierarchy. Here, instead of partitioning on space, we'll partition on object set. Essentially, we'll
+  recursively divide the set of objects into a tree of subsets until each leaf's subset has size below some certain threshold. While this approach is
+  more robust to spatially-skewed scenes than KD-trees, it also means that bounding boxes of different nodes can overlap--this means we can't leverage the pruning
+  methods of KD-trees.
 </p>
 
-<h4 align="middle">Algorithm</h4>
+<h3 align="middle">Algorithm</h3>
 <p>
-&emsp;The algorithm itself is fairly simple--we first split up the array of control points into rows of 4. For a given u and v, we'll evaluate the bezier curve points for each row using u. Since we're back in 2D land, each row's curve can be calculated with de Casteljau's! Then we'll take these 4 points (1/row), and evaluate the columnwise-direction bezier curve using v (also using de Casteljau's). As we vary u and v, we'll get points along this bezier surface.
+&emsp;The algorithm itself is fairly simple--we'll first consider the set of all objects in the scene. At each iteration, we first pick
+  an axis to split on: this is chosen as the axis with the greatest extent in the bounding box of all objects. We'll then pick a
+  split point along this axis, chosen as the average of the object's individual bounding box centroids. An alternative method is simply splitting
+  the axis evenly in half, however this runs into potentially-infinite recursion if all the objects lie on an edge of the bounding box. Using the
+  average of the centroids ensures that both sides of the split point will contain objects.
+  <br>
+  Now if we wish to find intersections of a given ray, we can traverse the BVH tree. At inner nodes, we check if the ray crosses the
+  bounding box of the node. If so, we recurse on the node's children; otherwise we continue. At leaf nodes, we perform the triangle/sphere test from the previous
+  part on all the leaf's encompassed primitives. If we simply want to know whether a ray intersects some object, then we can stop upon finding an intersection.
+  To find the closest or first intersection, however, we need to traverse the entire BVH; this is because the BVH is not necessarily oriented in the same
+  direction as the ray, so we must find all intersections first, then sort by distance to the ray's origin. In order to reduce this workload,
+  we can update the ray's bounds upon seeing any intersection: basically, we limit the ray's path to be at most the distance to the closest intersection we've
+  found so far.
 </p>
 
-<h4 align="middle">Results</h4>
+<h3 align="middle">Results</h3>
 <p>
-Here's a bezier-surface-composed image of a teapot:
+Now we can render scenes with hundreds of thousands of triangles with ease. As a test, we can keep track of rendering metrics with this BVH acceleration feature
+  turned off and on. The cow shown in image a was rendered without acceleration, and took ~171 sec to render. The naive approach traces 1,917,178 rays, performing
+  over 1000 intersection tests per ray! In contrast, our cow is rendered in image b with acceleration. Here, render time is reduced to a mere
+  0.286 sec. We trace 1,571,736 rays (some are pruned), and perform just 2.6 intersection tests per ray. Yippee! BVHs accelerate the beetle's render time
+  just as much: from 169 sec to 0.178 sec.
+<br>
+  So why do BVH's make such a huge difference? The idea is that for each ray, we're constantly reducing the search space of objects it could possibly intersect. First off, we check the ray
+  cheaply against the BVH's inner node bounding boxes. Any nodes which lie far enough away from the ray will not be explored. Moreover, we're also constricting the ray length, by
+  clipping its max distance to the closest intersection we've seen so far. Any nodes which lie beyond that distance will also not be explored.
 </p>
 </div>
 
@@ -158,12 +152,12 @@ Here's a bezier-surface-composed image of a teapot:
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj2/p2-1.png" align="middle" height="400px"/>
-        <figcaption align="middle">2a. Hey Teapot.</figcaption>
+        <img src="images/proj3/2-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">2a. Max Planck.</figcaption>
       </td>
       <td>
-        <img src="images/proj2/p2-2.png" align="middle" height="400px"/>
-        <figcaption align="middle">2b. Nice Curves.</figcaption>
+        <img src="images/proj3/2-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">2b. Room with spheres.</figcaption>
       </td>
     </tr>
   </table>
@@ -171,56 +165,49 @@ Here's a bezier-surface-composed image of a teapot:
 
 
 <div class="text">
-<h2 align="middle">Section II: Loop Subdivision of General Triangle Meshes</h2>
+<h2 align="middle">Part III: Direct Illumination</h2>
+  <p>
+    Now that we have a high-level approach for generating rays and testing intersections, we need to dive deeper into light properties.
+    If a ray intersects some shape, how do we know how light or dark this ray should make its pixel? In direct lighting, we'll test whether or not
+    each ray-primtive intersection is in direct view of a light source, or some shape that directly emits light. This stands in contrast with indirect lighting, where non-light objects
+    reflect rays from a light source indirectly onto our intersection point.
+  </p>
 
-<h3 align="middle">Part 3: Average Normals for Half-Edge Meshes</h3>
+<h3 align="middle">Uniform Hemisphere Sampling</h3>
 <p>
-&emsp;Now we'll switch topics a little to meshes. If we have a mesh of triangles that defines a surface, then how can we shade the surface? A naive approach is flat shading, or calculating the normal for each triangle and using that to determine the shading over that face. In this way, each triangle has a single color, with no smoothing-out of differences between adjacent triangles. Ew!
+  How do we know if some point can directly see a light source? One way is to send a bunch of rays in random directions within the hemisphere
+around the surface normal at our point (any rays that pass through the object from the opposite hemisphere would not be direct). For each of these
+rays, we'll get the radiance, or directly-emitted light, from its first intersection. However, this radiance is not necessarily preserved after the light bounces
+off of our point--indeed, we need an incoming-to-outgoing conversion; this is defined by a BSDF for diffuse surfaces (a function which returns outgoing radiance given incoming radiance
+  and the incoming/outgoing direction vectors). We'll also need to add two factors: 1) a cosine factor representing the difference between our randomly-sampled incoming direction
+  and the surface normal at the intersection, and 2) a inverse probability factor representing the probability that our sample direction was chosen. Since all directions
+in the hemisphere are equally likely to be chosen, this probability is a constant for now (1/2pi, as 2pi steradians define a hemisphere). </p>
+
+<h3 align="middle">Importance Sampling</h3>
+<p>
+&emsp;The issue with uniform hemisphere sampling is that it introduces noise and inefficiency. If we know beforehand the positions of a scene's light sources, then we shouldn't need to
+  send rays in random directions to calculate direct lighting; instead, we should only send rays in the direction of the light sources!
+  <br>
+With this approach, we'll loop through the scene lights and send some amount of rays in sampled directions which lie in the path to a light. If these rays don't
+  intersect with any other non-light objects along the way, then they can contribute to the direct lighting in the current intersection position. Our calculations
+  will be the same as before, except our probability factor must change. Now that we've added bias in our direction distribution (biased toward the light sources), we
+  need to divide each outgoing radiance by the probability that its incoming direction was chosen. Division makes sense here because a direction that's very unlikely to
+  be chosen should be weighted higher to account for it's lower frequency.
 </p>
 
-<h4 align="middle">A Better Way</h4>
+<h3 align="middle">Results</h3>
 <p>
-&emsp;The issue with flat-shading is that it ignores discontinuities at triangle vertices, where the surface is not flat. Instead, we can approximate the normals at each vertex using its surrounding faces! Then, we'll be able to render meshes more smoothly (for instance, we can calculate the normal at each point by interpolating across the normals of its triangle's vertices).
-<br>
-The actual implementation involves using the half-edge structure to our advantage. Starting at a vertex, we can iterate over adjacent faces by traversing each face's half-edges, then switching to a twin on the next face. Finding the normal for a face just means taking the cross-products of its edges. Finally, we'll keep an aggregate sum and count of face normals, and average over these to get an approximate vertex normal.
-</p>
-
-<h4 align="middle">Results</h4>
-<p>
-&emsp;Here we have mesh renderings of the teapot, toggling normal-averaging.
-</p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj2/p3-1.png" align="middle" height="400px"/>
-        <figcaption align="middle">3a. Face normals.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p3-2.png" align="middle" height="400px"/>
-        <figcaption align="middle">3b. Average vertex normals.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="text">
-<h3 align="middle">Part 4: Half-Edge Flip</h3>
-<p>
-&emsp;Okay, so we can render a simple mesh. What if we now wanted to manipulate it, for example by increasing the resolution? Just taking more samples on the existing mesh would not change the geometry of the final shape, so we need to change the mesh somehow.
-</br>
-&emsp;Before we consider upsampling, we'll need basic functions to adjust the mesh structure. Two essential functions are flipping and splitting edges.
-</p>
-
-<h4 align="middle">Edge Flipping</h3>
-<p>
-&emsp;Each edge lies between two faces, or triangles for a triangle mesh. Then, flipping an edge means making it connect the vertex on each triangle which is not already touched by this edge. The images below may give a clearer explanation, we're essentially switching the axis of the edge.
-</br>
-&emsp;Note that flipping doesn't increase the number of edges, vertices, or faces. Our implementation will borrow from the suggestion of listing out each half-edge, edge, vertex, and face adjacent to the given edge. We'll then redefine each variable according to a world where the edge is flipped. On the bad side, this involves some detailed, systematic work of listing out each variable which one thinks could be easily done programatically instead. On the good side, we ensure completeness, and gain a better understanding of the data structures.
-<br>
-&emsp;Fortunately, this robust approach worked the first time, so no cool debugging tales here.
+&emsp;Here we render those same scenes using both uniform and importance sampling. Notice how much more noise there is in uniform sampling--why does this happen? Intuitively, let's consider the percentage of sampled directions which lie in the path of a given light. In uniform sampling,
+  we're wasting a lot of samples which have no chance of landing on a light source, and this percentage can be really low if the scene lights are scarce.
+  In importance sampling, however, this percentage is 100%, so we're effectively pruning away directions that do not point toward a light.
+  <br>
+  Now consider the total number of samples which land on a light source. For this number to be equal between the sampling methods, we need a much
+  higher total sample count in uniform sampling. In other words, holding the sample count constant means that lights are tested with a much higher density
+  of samples in importance sampling. That's why uniform sampling does converge to the same result, but takes much more sampling (how much more depends on the scene).
+  <br>
+  The other images reflect changes in 1 sample/pixel renderings of some spheres over 1, 4, 16, and 64 light rays/pixel using importance sampling. Looking at the soft shadows under the spheres,
+  we can see the effects of sampling count--fewer samples introduce lots of noise because points along the soft shadow can see a portion of the light source. Taking more samples here, then, is a form of
+  antialiasing, of converging toward the true light value.
 </p>
 </div>
 
@@ -228,152 +215,221 @@ The actual implementation involves using the half-edge structure to our advantag
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj2/p4-1.png" align="middle" height="400px"/>
-        <figcaption align="middle">4a. Look, I just flipped the switch.</figcaption>
+        <img src="images/proj3/3-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">3a. 64 samples/pixel, 32 light rays/pixel, uniform sampling.</figcaption>
       </td>
       <td>
-        <img src="images/proj2/p4-2.png" align="middle" height="400px"/>
-        <figcaption align="middle">4b. (flip flip). </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj2/p4-3.png" align="middle" height="400px"/>
-        <figcaption align="middle">4c. More flips.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="text">
-<h3 align="middle">Part 5: Half-Edge Split</h3>
-<p>
-&emsp;While flipping edges changes the structure of the mesh, it doesn't add new triangles (which is intuitively what we want when upsampling). Thus, we introduce edge splitting.
-</br>
-&emsp;With edge splitting, we keep the original edge, while also adding the flipped version as a new edge. Note, however, that because an edge and its flipped version intersect, that splitting results in 2 more triangles. Moreover, the original edge gets split into 2 (similarly for the new, flipped edge).
-<br>
-&emsp;Our implementation here follows the same approach as with edge flipping: we first list out all variables involved, adding new variables for new faces, edges, and vertex. Then we imagine this area of the mesh with a split edge, and reassign all the variables accordingly. This approach worked the first time here as well (props to the method).
-<br>
-The images below describe edge splitting as well as a combination of flips and splits.
-</p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj2/p5-1.png" align="middle" height="400px"/>
-        <figcaption align="middle">5a. Edge.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p5-2.png" align="middle" height="400px"/>
-        <figcaption align="middle">5b. Split.</figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj2/p5-3.png" align="middle" height="400px"/>
-        <figcaption align="middle">5c. Cow.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p5-4.png" align="middle" height="400px"/>
-        <figcaption align="middle">5d. Cow with splits and flips.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="text">
-<h3 align="middle">Part 6: Loop Subdivision for Mesh Upsampling</h3>
-<p>
-&emsp;Mesh upsampling involves two steps: splitting and flipping. First we split each edge, in any order. However, this deregularizes the mesh, and the new triangles will lose the original mesh's consistent shape and size. Flipping some edges, then, returns to the mesh a consistent triangle shape (specifically, we flip edges that bridge between a new and old vertex).
-<br>
-&emsp;So we've split each triangle into 4 smaller triangles. While this does change the topology of the mesh, it doesn't change the geometry! Since new vertices are placed according to existing vertices, the overall shape will not change! 
-</br>
-&emsp;To deal with this, we must reposition all the vertices, both old and new. Since loop subdivision is an approximation-based approach, the control cage of old vertices is not necesarily maintained after subdivision--in fact, the object often shrinks in size. 
-</br>
-&emsp;Actual implementation was made much easier by a suggested approach. We first calculate the new positions of old and new vertices, storing them in an auxiliary field as we require all the original vertex positions in order to calculate each new position. Then we can split each edge, and flip the ones between and old and new vertex (we can distinguish between them using another boolean field). To make sure we only split old edges (and not recursively ones we have just created), we can either preload all the old edges, or mark edges as old or new. The former approach can fill up memory, but reduces the need for a temporary field. In the end, we can reposition all the vertices using their previously-saved values. No interesting tricks here, just following the well-worn path.
-</p>
-
-<h4 align="middle">Results</h4>
-<p>
-&emsp;Here's a series of images of a Torus undergoing upsampling.
-</p>
-
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj2/p6-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">6a. Torus.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p6-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">6b. Upsampled Torus.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="text">
-<h4 align="middle">What Happens to Sharp Edges and Corners</h4>
-<p>
-&emsp;Due to its approximative nature, Loop Upsampling does not preserve original vertices. This means that the shape becomes more 'rounded', and sharp features will be smoothed out. However, in the images below, we try to preserve a sharp edge of the original torus by repeatedly splitting this edge and the edges on its adjacent faces. This does keep the edge sharp, but distorts the geometry local to that edge.
-</p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj2/p6-3.png" align="middle" width="400px"/>
-        <figcaption align="middle">6c. Torus with edge splits.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p6-4.png" align="middle" width="400px"/>
-        <figcaption align="middle">6d. Upsampled--notice the sharpness is preserved.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-
-<div class="text">
-<h4 align="middle">Loop Subdivison and Asymmetry</h4>
-<p>
-&emsp;From continuously upsampling the cube, we can notice a sort of assymetric deviation. The upsampled cube is no longer symmetric, and contains some odd protrusions. What happened?
-<br>
-Well, if we examine the original cube, we'll see that each face is split along a single diagonal. This introduces, in a sense, asymmetry which is augmented when we apply Loop Upsampling (the original diagonal edge lines will remain unchanged, but there won't be a corresponding continuous line of edges along the other diagonal).
-<br>
-See below for what happens when we first split each face of the cube into 4, totally symmetric triangles first. The upsampled cube is symmetric!
-</p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj2/p6-5.png" align="middle" width="400px"/>
-        <figcaption align="middle">6e. Cube.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj2/p6-6.png" align="middle" width="400px"/>
-        <figcaption align="middle">6f. Upsampled--notice the asymmetry.</figcaption>
+        <img src="images/proj3/3-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">3b. 64 samples/pixel, 32 light rays/pixel, importance sampling.</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/proj2/p6-7.png" align="middle" width="400px"/>
-        <figcaption align="middle">6g. Cube with split faces.</figcaption>
+        <img src="images/proj3/3-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">3c. 16 samples/pixel, 8 light rays/pixel, uniform sampling.</figcaption>
       </td>
       <td>
-        <img src="images/proj2/p6-8.png" align="middle" width="400px"/>
-        <figcaption align="middle">6h. Upsampled--Mmm...</figcaption>
+        <img src="images/proj3/3-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">3d. 64 samples/pixel, 32 light rays/pixel, importance sampling.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj3/3-spheres1.png" align="middle" width="400px"/>
+        <figcaption align="middle">3e. 1 sample/pixel, 1 light ray/pixel, importance sampling.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/3-spheres4.png" align="middle" width="400px"/>
+        <figcaption align="middle">3f. 1 sample/pixel, 4 light rays/pixel, importance sampling.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj3/3-spheres16.png" align="middle" width="400px"/>
+        <figcaption align="middle">3g. 1 sample/pixel, 16 light rays/pixel, importance sampling.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/3-spheres64.png" align="middle" width="400px"/>
+        <figcaption align="middle">3h. 1 sample/pixel, 64 light rays/pixel, importance sampling.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+<h2 align="middle">Part IV: Global Illumination</h2>
+<p>
+&emsp;Global lighting requires not just direct light but indirect light as well.
+  </br>
+  Let's consider an intersection point like before. Instead of testing whether this point is lit directly by scene lights,
+  we instead recursively generate new rays from this point and see if these rays (which follow bounces off objects) eventually
+  land on a light source.
+  <br>
+  One notes that this type of recursion is infinite--we can always keep following a ray through potentially-endless bounces; but
+  since more bounces weaken the resulting radiance contribution to our original point (due to our cosine and bsdf factors), we can truncate these paths at some point.
+  One way to do this is Russian Roulette, where there's a probability (around 0.3-0.4) that a path is terminated upon each bounce (although
+  if indirect lighting is enabled, we'll ensure each path bounces at least once.
+  <br>
+  The end algorithm is as follows: for an intersection point, we first find its emitted light (nonzero if the point lies on a light source). We'll then
+  find its direct illumination using the previous methods. Finally, we'll start exploring bounces off of this point, following those paths and
+  accumulating the direct light values at each bounce (note that if there's no bounce, i.e. the path doesn't intersect anything, then we terminate the path by default).
+</p>
+
+<h3 align="middle">Results</h3>
+<p>
+Here are some results.
+  <br>
+  Images a-b are examples of global lighting.
+  <br>
+  Images c-d break apart global lighting into its direct and indirect constituents. Notice reflections off the floor and walls are captured
+  in the indirect contribution.
+  <br>
+  Images e-j reflect changes in renderings over max_ray_depth values of 0, 1, 2, 3, 50, and 100 (where max_ray_depth is a hard cap
+  on the path length of bounces when calculating indirect light).
+  <br>
+  To conclude, we'll render a scene with spheres over varying sample/pixel rates, ranging from 1 to 1024.
+</p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj3/4-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4a. 64/16 samples/light rays pp, max ray depth 5.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/4-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4b. 64/16 samples/light rays pp, max ray depth 5. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/4-3.png" align="middle" width="400px"/>
+        <figcaption align="middle">4c. Direct lighting only.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/4-4.png" align="middle" width="400px"/>
+        <figcaption align="middle">4d. Indirect lighting only. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/bunny0.png" align="middle" width="400px"/>
+        <figcaption align="middle">4e. 1024/16 samples/light rays pp, max ray depth 0.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/bunny1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4f. 1024/16 samples/light rays pp, max ray depth 1. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/bunny2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4g. 1024/16 samples/light rays pp, max ray depth 2.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/bunny3.png" align="middle" width="400px"/>
+        <figcaption align="middle">4h. 1024/16 samples/light rays pp, max ray depth 3. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/bunny50.png" align="middle" width="400px"/>
+        <figcaption align="middle">4i. 1024/16 samples/light rays pp, max ray depth 50.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/bunny100.png" align="middle" width="400px"/>
+        <figcaption align="middle">4j. 1024/16 samples/light rays pp, max ray depth 100. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/s1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4k. 1 sample/pixel.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/s2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4l. 2 samples/pixel. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/s4.png" align="middle" width="400px"/>
+        <figcaption align="middle">4m. 4 samples/pixel.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/s8.png" align="middle" width="400px"/>
+        <figcaption align="middle">4n. 8 samples/pixel. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/s16.png" align="middle" width="400px"/>
+        <figcaption align="middle">4o. 16 samples/pixel.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/s64.png" align="middle" width="400px"/>
+        <figcaption align="middle">4p. 64 samples/pixel. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj3/s512.png" align="middle" width="400px"/>
+        <figcaption align="middle">4q. 512 samples/pixel.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/s1024.png" align="middle" width="400px"/>
+        <figcaption align="middle">4r. 1024 samples/pixel. </figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+<h2 align="middle">Part V: Adaptive Sampling</h2>
+<p>
+Let's go back to the first part, where we generate rays shooting from the camera through pixels on the sensor plane. In our current
+  approach, we're sending some fixed number of sample rays through each pixel. Could this be made more efficient?
+  <br>
+  A key observation is that some or many pixels could have a constant or low-variance lighting values across its area. If a pixel projects
+  onto a wall in the scene, then any ray going through this pixel will probably give the same resulting light value. If a pixel projects into
+  nothing, then every sample going through this pixel will give no light. If this is the case, why bother continue sending sample rays when we already
+  know the value for this pixel?
+  <br>
+  In reality, it's difficult to truly know that we have a correct pixel value, as this would require lots of work mapping pixel areas to space in the scene.
+  Instead, we can simply keep a running average and variance of all the values seen so far from samples for a given pixel. Once this variance dips below
+  a certain threshold, then we can stop sampling for this pixel. The exact calculation is drawn from z-tests in statistics, and we'll stop sampling
+  a pixel once we know with 95% confidence that new samples won't significantly affect our current value.
+</p>
+
+<h3 align="middle">Results</h3>
+  <p>
+    Here's an image rendered using adaptive sampling, and it's corresponding heat map of samples/pixel (where blue is the lower bound and red is the upper bound).
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj3/5-1.png" align="middle" height="400px"/>
+        <figcaption align="middle">5a. Bunny (taking 2048 samples/pixel).</figcaption>
+      </td>
+      <td>
+        <img src="images/proj3/5-2.png" align="middle" height="400px"/>
+        <figcaption align="middle">5b. Heap map.</figcaption>
       </td>
     </tr>
   </table>
