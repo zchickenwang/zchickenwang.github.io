@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c9b9c213-6542-489c-8618-2ef79baa1136" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/ass3.html" beforeDir="false" afterPath="$PROJECT_DIR$/ass3.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -15,11 +15,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="247">
-              <caret line="218" column="25" selection-end-line="439" />
+            <state relative-caret-position="423">
+              <caret line="442" lean-forward="true" selection-start-line="442" selection-end-line="442" />
               <folding>
                 <element signature="n#style#0;n#table#0;n#div#5;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#table#0;n#div#7;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -28,11 +28,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ass3.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="91">
-              <caret line="55" column="31" selection-start-line="55" selection-start-column="31" selection-end-line="55" selection-end-column="31" />
+            <state relative-caret-position="196">
+              <caret line="62" column="8" lean-forward="true" selection-end-line="442" />
               <folding>
                 <element signature="n#style#0;n#table#0;n#div#5;n#body#0;n#html#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#table#0;n#div#7;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -49,8 +49,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/index.html" />
         <option value="$PROJECT_DIR$/ass3.html" />
+        <option value="$PROJECT_DIR$/index.html" />
       </list>
     </option>
   </component>
@@ -105,12 +105,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1552352518376</updated>
-      <workItem from="1552352520683" duration="12000000" />
+      <workItem from="1552352520683" duration="12114000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="12000000" />
+    <option name="totallyTimeSpent" value="12114000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="20" y="43" width="1400" height="837" extended-state="0" />
@@ -120,7 +120,7 @@
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24945612" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="Version Control" visible="true" weight="0.32885906" />
       <window_info anchor="bottom" id="Terminal" />
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -139,10 +139,10 @@
     <option name="version" value="1" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/index.html">
+    <entry file="file://$PROJECT_DIR$/ass3.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="218" column="25" selection-end-line="439" />
+        <state relative-caret-position="196">
+          <caret line="62" column="8" lean-forward="true" selection-end-line="442" />
           <folding>
             <element signature="n#style#0;n#table#0;n#div#5;n#body#0;n#html#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#table#0;n#div#7;n#body#0;n#html#0;n#!!top" expanded="true" />
@@ -150,10 +150,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ass3.html">
+    <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="91">
-          <caret line="55" column="31" selection-start-line="55" selection-start-column="31" selection-end-line="55" selection-end-column="31" />
+        <state relative-caret-position="423">
+          <caret line="442" lean-forward="true" selection-start-line="442" selection-end-line="442" />
           <folding>
             <element signature="n#style#0;n#table#0;n#div#5;n#body#0;n#html#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#table#0;n#div#7;n#body#0;n#html#0;n#!!top" expanded="true" />
