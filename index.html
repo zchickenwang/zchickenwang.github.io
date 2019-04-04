@@ -34,7 +34,7 @@
     }
 
   </style>
-  <title>CS 184 Pathtracer</title>
+  <title>CS 184 Pathtracer 2</title>
   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
   <link href="https://fonts.googleapis.com/css?family=Averia+Serif+Libre|Cardo|Concert+One|Fredoka+One" rel="stylesheet">
 </head>
@@ -43,7 +43,7 @@
 <body>
 
 <h1 align="middle" style="color:#A0522D;">CS 184: Computer Graphics and Imaging, Spring 2019</h1>
-<h1 align="middle" style="color:#DAA520;">Project 3: Pathtracer</h1>
+<h1 align="middle" style="color:#DAA520;">Project 3-2: Pathtracer 2</h1>
 <h2 align="middle" class="pale">Z Wang</h2>
 
 <br><br>
@@ -52,41 +52,67 @@
   <p>
     This content can be found on my Github Page: zchickenwang.github.io.
     <br>
-    * Note: There's a typo here where I put light rays / pixel (incorrect) instead of samples / area light. Please keep this
-    in mind when checking out the images, thanks!
   </p>
 
   <h2 align="middle">Overview</h2>
-  <p> &emsp;In order to render realistic scenes, we need to generate realistic lighting. In this project, we focus on pathtracing: using a simple, particle model of light to mimic the effects of light on a scene.
+  <p> &emsp;
+    In the last project, we developed the fundamentals of ray-tracing; here, we'll expand on that foundation and build out
+    some different features.
     <br>
-    &emsp;We'll start off at a high-level: given a reliable physics model, how do we sample the lighting at each sensor pixel. We then step into to the model, asking questions like 1) how do we know what part of a scene each pixel in a given camera view should represent, 2) how do we know the lighting qualities of a point in the scene (e.g. direct, indirect light), and 3) how can we make these computations efficient? In doing so, we'll gain some insight into the mechanics behind light ray generation and manipulation.
+    We'll start off with generalizing to different surface interactions. By accounting for glossy and transparent materials,
+    we'll be able to render much more complex scenes with materials that are both common and visually rich.
+    <br>
+    Then we'll move to modeling microfacet materials, thus giving more detail to our surfaces. By changing microfacet parameters,
+    we'll be able to model a variety of different materials to a much finer degree.
+    <br>
+    Next we'll explore environment lighting, which gives the power to model scenes with natural light. We'll be able to capture and
+    use texture maps of different environments, placing objects realistically within them.
+    <br>
+    Lastly, we'll cover depth of field by expanding our camera model to adopt a thin-lens approximation. This will let us control
+    focus within our rendered images.
   </p>
 
-  <h2 align="middle">Part I: Ray Generation and Scene Intersection</h2>
+  <h2 align="middle">Part I: Mirror and Glass Materials </h2>
 
   <h3 align="middle">Ray Generation</h3>
 
-  <p>&emsp;At a high-level, we're firing light rays through the camera view. These rays will start at the camera position, pass through a pixel in the sensor plane, and land somewhere in the scene world.
-    <br>
-    In order to make sure each pixel is sampled, we'll generate some fixed number of rays through each pixel: call this ns_aa. As with sampling in rasterization, we have a choice in how to distribute these samples/pixel. With rasterization, we spread the samples uniformly across the pixel area. Here, we'll try randomly picking positions (with a high-enough ns_aa value, this converges to a uniform distribution).
-    <br>
-    So how exactly is a ray created? After we pick a point on the sensor plane, i.e. a 2D position on the screen, we need to translate this into a 3D position in the world space. We'll do this using the sensor plane's field-of-view bounds, which map the corners of the sensor plane to 3D positions in the scene world. Each ray then 1) starts at the camera position, 2) travels in the direction given by the pixel sample position, and 3) is limited by the bounds of the scene that our current camera position can capture.
-  </p>
-
-  <h3 align="middle">Primitive Intersection</h3>
-
-  <p>&emsp;Once we fire the ray, how can we tell where it lands in the scene? If we consider the scene as being composed of primitive shapes (like in polygon meshes), then we're looking for a way to test if a ray intersects a shape. In this project, we'll examine two basic primitives: triangles and spheres.
-    <br>
-    To deal with triangles, let's consider one on some object mesh. It'll lie on some plane, so one approach is finding the intersection of the ray on that plane. We can then use existing, 2D methods (like barycentric coordinates) to see if that intersection point lies within the triangle.
-    <br>
-    In algebraic terms, we have equations for both the path of the ray and the triangle plane (created using the triangle vertices). Solving this system of equations tells us if the ray intersects the plane, and if it does, gives the barycentric coordinates of the intersection point. If these coordinates all lie between 0 and 1, then we know the intersection point lies within the triangle (moreover, we know exactly where--this is necessary for interpolating the surface normal at that point).
-    <br>
-    What about spheres? We can adopt the same approach: solve the system of equations given by the ray path and the sphere (the sphere given by the set of points with distance radius from the center). This system devolves into a quadratic equation with one unknown (time w.r.t the ray trajectory), which can be easily solved.
+  <p>&emsp;First we'll complete the implementations of reflective and transparent surfaces. Perfect reflection means
+  the incoming and outgoing rays are mirrors of each other across the surface normal. With refraction, we first use
+    Schlick's Approximation of the Fresnel term to decide between following the path of reflection or transmission.
+    If it's the latter, then we can find the refracted direction using Snell's Law.
   </p>
 
   <h3 align="middle">Results</h3>
   <p>
-    Here are some results we get.
+    Here's a scene with a mirror and glass ball. We'll cap the max ray depth at certain levels to see what artifacts
+    successive bounces will introduce.
+    <br>
+    At 0 depth, only light which is emitted directly into the camera will be captured. This is the light in the ceiling.
+    <br>
+    At depth 1, rays from the light source can bounce once (on the walls, floor, etc.) before arriving at the camera.
+    Thus, the room gets illuminated. Note however the ceiling remains dark, as well as the two balls (whose irradiance
+    depends on further bounces of either reflection or refraction).
+    <br>
+    At depth 2, the ceiling is illuminated because rays can bounce first off the rest of the room, go back to the ceiling,
+    then go toward the camera. The mirror ball becomes reflective for the same reasons, and the glass ball is partly-illuminated
+    from rays which reflect into the light, as well as ones which come from the light source and refract twice to go through the ball.
+    <br>
+    At depth 3, we get to see the transmission rays which go through the mirror ball and hit some diffuse surface before arriving
+    at the light source. This significantly illuminates the glass ball. We also see the specular reflection on the glass ball on the
+    mirror ball's surface.
+    <br>
+    At depth 4, the glass ball's reflection in the mirror ball turns bluish because light rays that bounce off the blue wall, trasmit
+    through the glass ball, and then reflect off the mirror ball into the camera take 4 bounces. We can also see a bright spot underneath
+    the glass ball--this is the reflection of the source light off of the mirror ball. These reflections transmit through the glass ball
+    onto the floor.
+    <br>
+    At depth 5, the floor reflection underneath the glass ball becomes visible in it's mirror image. This reflection can also
+    reflect further off of the right wall before hitting the camera, so a light becomes visible there.
+    <br>
+    Past depth 5, improvements begin to diminish. Later depths add more smoothness and account for more and more of the
+    infinitely-recursive light rays.
+    <br>
+    These renderings use 256 samples/pixel and 4 samples/light.
   </p>
 </div>
 
@@ -94,60 +120,65 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj3/1-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">1a. Issa Cow (Render time: 170.8s).</figcaption>
+        <img src="images/proj32/spheres0x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1a. Max ray depth = 0.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/1-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">1b. Issa Beetle (Render time: 168.6s).</figcaption>
+        <img src="images/proj32/spheres1x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1b. Max ray depth = 1.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj32/spheres2x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1c. Max ray depth = 2.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj32/spheres3x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1d. Max ray depth = 3.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj32/spheres4x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1e. Max ray depth = 4.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj32/spheres5x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1f. Max ray depth = 5.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj32/spheres100x.png" align="middle" width="400px"/>
+        <figcaption align="middle">1g. Max ray depth = 100.</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-  <h2 align="middle">Part II: Bounding Volume Hierarchy</h2>
+  <h2 align="middle">Part II: Microfacet Materials</h2>
   <p>
-    &emsp;A massive problem with our naive approach is time complexity. For each ray, we're testing its intersection with every object in the scene.
-    As a result, render time is exponential in the number of objects, making any complex scene impractical.
-    This naive approach is stupid because most of the primitives will lie nowhere near the ray, and we should incoporate this knowledge into the algorithm. One intuitive way
-    to do this is to organize the scene objects into some sort of spatial hierarchy, like with R-trees or KD-trees. In this way, we'll be able to prune
-    the space of primitives that could possibly lie in the current ray's path.
-    </br>
-    &emsp;The implementation we'll go with is using a Bounding Volume Hierarchy. Here, instead of partitioning on space, we'll partition on object set. Essentially, we'll
-    recursively divide the set of objects into a tree of subsets until each leaf's subset has size below some certain threshold. While this approach is
-    more robust to spatially-skewed scenes than KD-trees, it also means that bounding boxes of different nodes can overlap--this means we can't leverage the pruning
-    methods of KD-trees.
+    In order to penetrate the next level of realism, we need to implement microfacet surfaces, or surfaces
+    which have minute abberations which follow certain distributions depending on the surface material.
   </p>
 
-  <h3 align="middle">Algorithm</h3>
+  <h3 align="middle">Roughness</h3>
   <p>
-    &emsp;The algorithm itself is fairly simple--we'll first consider the set of all objects in the scene. At each iteration, we first pick
-    an axis to split on: this is chosen as the axis with the greatest extent in the bounding box of all objects. We'll then pick a
-    split point along this axis, chosen as the average of the object's individual bounding box centroids. An alternative method is simply splitting
-    the axis evenly in half, however this runs into potentially-infinite recursion if all the objects lie on an edge of the bounding box. Using the
-    average of the centroids ensures that both sides of the split point will contain objects.
+    Let's introduce a term alpha indicating the level of smoothness for a isotropic conductor which only reflects.
+    As we vary alpha, we can see a mock-gold material change from diffuse to glossy.
     <br>
-    Now if we wish to find intersections of a given ray, we can traverse the BVH tree. At inner nodes, we check if the ray crosses the
-    bounding box of the node. If so, we recurse on the node's children; otherwise we continue. At leaf nodes, we perform the triangle/sphere test from the previous
-    part on all the leaf's encompassed primitives. If we simply want to know whether a ray intersects some object, then we can stop upon finding an intersection.
-    To find the closest or first intersection, however, we need to traverse the entire BVH; this is because the BVH is not necessarily oriented in the same
-    direction as the ray, so we must find all intersections first, then sort by distance to the ray's origin. In order to reduce this workload,
-    we can update the ray's bounds upon seeing any intersection: basically, we limit the ray's path to be at most the distance to the closest intersection we've
-    found so far.
-  </p>
-
-  <h3 align="middle">Results</h3>
-  <p>
-    Now we can render scenes with hundreds of thousands of triangles with ease. As a test, we can keep track of rendering metrics with this BVH acceleration feature
-    turned off and on. The cow shown in image a was rendered without acceleration, and took ~171 sec to render. The naive approach traces 1,917,178 rays, performing
-    over 1000 intersection tests per ray! In contrast, our cow is rendered in image b with acceleration. Here, render time is reduced to a mere
-    0.286 sec. We trace 1,571,736 rays (some are pruned), and perform just 2.6 intersection tests per ray. Yippee! BVHs accelerate the beetle's render time
-    just as much: from 169 sec to 0.178 sec.
+    The first dragon looks very diffuse: light is spread across the surface, and there are no distinct specular reflections.
+    As we turn down alpha, the radiance from reflected light appears in smaller and smaller areas, converging toward a pure
+    reflection off the dragon's surface. Furthermore, areas which once reflected light at grazing angles no longer reflect
+    toward the light source, but rather out along their surface normal toward the viewer. Since the camera is an empty black
+    space, we can see surfaces perpendicular to the camera vector turn dark.
     <br>
-    So why do BVH's make such a huge difference? The idea is that for each ray, we're constantly reducing the search space of objects it could possibly intersect. First off, we check the ray
-    cheaply against the BVH's inner node bounding boxes. Any nodes which lie far enough away from the ray will not be explored. Moreover, we're also constricting the ray length, by
-    clipping its max distance to the closest intersection we've seen so far. Any nodes which lie beyond that distance will also not be explored.
+    These images were rendered with 128 samples/pixel, 4 samples/light, and a max ray depth of 5.
   </p>
 </div>
 
@@ -155,12 +186,82 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj3/2-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">2a. Max Planck.</figcaption>
+        <img src="images/proj32/d0.png" align="middle" width="400px"/>
+        <figcaption align="middle">2a. alpha = 0.5.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/2-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">2b. Room with spheres.</figcaption>
+        <img src="images/proj32/d1.png" align="middle" width="400px"/>
+        <figcaption align="middle">2b. alpha = 0.25.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj32/d2.png" align="middle" width="400px"/>
+        <figcaption align="middle">2c. alpha = 0.05.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj32/d3.png" align="middle" width="400px"/>
+        <figcaption align="middle">2d. alpha = 0.005.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+  <h3 align="middle">Sampling</h3>
+  <p>
+    If our microfacet material was perfectly diffuse, then the existing cosine hemisphere sampling approach
+    would work well. However, if we model the material's surface normal distribution as non-uniform, like with our
+    Beckmann distribution, then importance sampling becomes more efficient.
+    <br>
+    Observing the copper bunnies below shows the difference between cosine hemisphere and importance sampling. In cosine hemisphere
+    sampling, many sampled directions will not be valid (hence all the black). With importance
+    sampling, we emphasize reflection directions which have high contribution to a point's irradiance. In this way,
+    the microfacet surface becomes clearer and smoothed out.
+    <br>
+    These images were rendered with 64 samples/pixel, 1 sample/light, and max ray depth 7.
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj32/noncos.png" align="middle" width="400px"/>
+        <figcaption align="middle">2e. Cosine hemisphere sampling.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj32/cos.png" align="middle" width="400px"/>
+        <figcaption align="middle">2f. Importance sampling.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+  <h3 align="middle">Materials</h3>
+  <p>
+    These materials can be defined by their indices of refraction and extinction coefficient at the three major
+    visible wavelengths (S/M/L, or R/G/B).
+    <br>
+    In this way, we can introduce new materials fairly easily, like Chromium (see images)! Note that the dragon
+    looks pretty similar as we didn't change alpha. In 2h, we reduce alpha to 0.01 so the surface appears more glossy.
+    <br>
+    These images were rendered with 128 samples/pixel, 4 samples/light, and max ray depth 5.
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj32/chromed.png" align="middle" width="400px"/>
+        <figcaption align="middle">2g. Chromium dragon.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj32/chromeb.png" align="middle" width="400px"/>
+        <figcaption align="middle">2h. Chromium bunny.</figcaption>
       </td>
     </tr>
   </table>
@@ -168,49 +269,43 @@
 
 
 <div class="text">
-  <h2 align="middle">Part III: Direct Illumination</h2>
+  <h2 align="middle">Part III: Environment Light</h2>
   <p>
-    Now that we have a high-level approach for generating rays and testing intersections, we need to dive deeper into light properties.
-    If a ray intersects some shape, how do we know how light or dark this ray should make its pixel? In direct lighting, we'll test whether or not
-    each ray-primtive intersection is in direct view of a light source, or some shape that directly emits light. This stands in contrast with indirect lighting, where non-light objects
-    reflect rays from a light source indirectly onto our intersection point.
+    In the real world, light is often driven not by specific light sources, but by the sky itself, and sun rays'
+    infinite bounces across the sky. To model this, we can use our environment as a light source itself, one that
+    is infinitely far away. Once we place objects within an environment, its lighting will contribute to irradiance
+    on those objects. Environment light allows us to create much more realistic natural-light images, and also
+    allows using texture maps to define the lighting of a scene.
   </p>
 
-  <h3 align="middle">Uniform Hemisphere Sampling</h3>
+  <h3 align="middle">Sampling</h3>
   <p>
-    How do we know if some point can directly see a light source? One way is to send a bunch of rays in random directions within the hemisphere
-    around the surface normal at our point (any rays that pass through the object from the opposite hemisphere would not be direct). For each of these
-    rays, we'll get the radiance, or directly-emitted light, from its first intersection. However, this radiance is not necessarily preserved after the light bounces
-    off of our point--indeed, we need an incoming-to-outgoing conversion; this is defined by a BSDF for diffuse surfaces (a function which returns outgoing radiance given incoming radiance
-    and the incoming/outgoing direction vectors). We'll also need to add two factors: 1) a cosine factor representing the difference between our randomly-sampled incoming direction
-    and the surface normal at the intersection, and 2) a inverse probability factor representing the probability that our sample direction was chosen. Since all directions
-    in the hemisphere are equally likely to be chosen, this probability is a constant for now (1/2pi, as 2pi steradians define a hemisphere). </p>
-
-  <h3 align="middle">Importance Sampling</h3>
-  <p>
-    &emsp;The issue with uniform hemisphere sampling is that it introduces noise and inefficiency. If we know beforehand the positions of a scene's light sources, then we shouldn't need to
-    send rays in random directions to calculate direct lighting; instead, we should only send rays in the direction of the light sources!
+    &emsp;Here as well, sampling comes into play. Uniform hemisphere sampling works best when our texture map has relatively
+    uniform environment lighting. In order to generalize toward all environment light distributions, we can use importance
+    sampling on the environment light to emphasize directions which have high radiance.
     <br>
-    With this approach, we'll loop through the scene lights and send some amount of rays in sampled directions which lie in the path to a light. If these rays don't
-    intersect with any other non-light objects along the way, then they can contribute to the direct lighting in the current intersection position. Our calculations
-    will be the same as before, except our probability factor must change. Now that we've added bias in our direction distribution (biased toward the light sources), we
-    need to divide each outgoing radiance by the probability that its incoming direction was chosen. Division makes sense here because a direction that's very unlikely to
-    be chosen should be weighted higher to account for it's lower frequency.
+    To do importance sampling, we weight each texel on the environment map by its light value. We can then use 2 random
+    numbers to index into the 2d map space, picking indices probabilistically. To do this, we create discrete,
+    cumulative distribution functions across the rows of the texture map, and ones for the columns in each row. Given a random
+    number, then, we find the index whose cumulative probability first becomes greater than our number.
   </p>
 
   <h3 align="middle">Results</h3>
   <p>
-    &emsp;Here we render those same scenes using both uniform and importance sampling. Notice how much more noise there is in uniform sampling--why does this happen? Intuitively, let's consider the percentage of sampled directions which lie in the path of a given light. In uniform sampling,
-    we're wasting a lot of samples which have no chance of landing on a light source, and this percentage can be really low if the scene lights are scarce.
-    In importance sampling, however, this percentage is 100%, so we're effectively pruning away directions that do not point toward a light.
+    The first two images show our chosen environment map and its corresponding probability distribution heatmap.
     <br>
-    Now consider the total number of samples which land on a light source. For this number to be equal between the sampling methods, we need a much
-    higher total sample count in uniform sampling. In other words, holding the sample count constant means that lights are tested with a much higher density
-    of samples in importance sampling. That's why uniform sampling does converge to the same result, but takes much more sampling (how much more depends on the scene).
+    The next four show the difference between uniform hemisphere and importance sampling of the environment lights.
     <br>
-    The other images reflect changes in 1 sample/pixel renderings of some spheres over 1, 4, 16, and 64 light rays/pixel using importance sampling. Looking at the soft shadows under the spheres,
-    we can see the effects of sampling count--fewer samples introduce lots of noise because points along the soft shadow can see a portion of the light source. Taking more samples here, then, is a form of
-    antialiasing, of converging toward the true light value.
+    In 3c-d, we see importance sampling greatly reduces noise on the platform surface (which, excluding the specular reflections
+    on the bunny, compose some of the brightest areas in the image). The bunny's countours are smoothed out, however the dark
+    areas remain noisy.
+    <br>
+    In 3e-f, we see how environment light sampling acts in tandem with microfacet materials. While importance sampling reduces
+    the amount of noise in light areas (on both the platform and bunny), it exacerbates noise in the shadows. This makes sense
+    because we sample the light areas more, so shadows become represented by too few samples, which means each of these samples ends
+    up carrying too much weight--thus we see the stark contrast in the shadows. The reflectivity of the surface further adds noise.
+    <br>
+    All images were rendered with 4 samples/pixel, 64 samples/light, and max ray depth 5.
   </p>
 </div>
 
@@ -218,82 +313,59 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj3/3-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">3a. 64 samples/pixel, 32 light rays/pixel, uniform sampling.</figcaption>
+        <img src="images/proj32/ennis.jpg" align="middle" width="400px"/>
+        <figcaption align="middle">3a. Environment map.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/3-4.png" align="middle" width="400px"/>
-        <figcaption align="middle">3b. 64 samples/pixel, 32 light rays/pixel, importance sampling.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj3/3-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">3c. 16 samples/pixel, 8 light rays/pixel, uniform sampling.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/3-3.png" align="middle" width="400px"/>
-        <figcaption align="middle">3d. 64 samples/pixel, 32 light rays/pixel, importance sampling.</figcaption>
+        <img src="images/proj32/pdennis.png" align="middle" width="400px"/>
+        <figcaption align="middle">3b. Environment light probability distribution.</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/proj3/3-spheres1.png" align="middle" width="400px"/>
-        <figcaption align="middle">3e. 1 sample/pixel, 1 light ray/pixel, importance sampling.</figcaption>
+        <img src="images/proj32/uniform.png" align="middle" width="400px"/>
+        <figcaption align="middle">3c. No microfacet, uniform hemisphere sampling.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/3-spheres4.png" align="middle" width="400px"/>
-        <figcaption align="middle">3f. 1 sample/pixel, 4 light rays/pixel, importance sampling.</figcaption>
+        <img src="images/proj32/importance.png" align="middle" width="400px"/>
+        <figcaption align="middle">3d. No microfacet, importance sampling.</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/proj3/3-spheres16.png" align="middle" width="400px"/>
-        <figcaption align="middle">3g. 1 sample/pixel, 16 light rays/pixel, importance sampling.</figcaption>
+        <img src="images/proj32/uniform1.png" align="middle" width="400px"/>
+        <figcaption align="middle">3e. Copper microfacet, uniform hemisphere sampling.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/3-spheres64.png" align="middle" width="400px"/>
-        <figcaption align="middle">3h. 1 sample/pixel, 64 light rays/pixel, importance sampling.</figcaption>
+        <img src="images/proj32/importance1.png" align="middle" width="400px"/>
+        <figcaption align="middle">3f. Copper microfacet, importance sampling.</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-  <h2 align="middle">Part IV: Global Illumination</h2>
+  <h2 align="middle">Part IV: Depth of Field</h2>
   <p>
-    &emsp;Global lighting requires not just direct light but indirect light as well.
-    </br>
-    Let's consider an intersection point like before. Instead of testing whether this point is lit directly by scene lights,
-    we instead recursively generate new rays from this point and see if these rays (which follow bounces off objects) eventually
-    land on a light source.
+    &emsp;So far we've been relying on a pinhole model of a camera. This means the world gets focused through a hole
+    onto the image plane. In this way, everything is in focus, and we do not have depth of field. In order to
+    leverage more advanced focus techniques, we'll need to adapt our model.
     <br>
-    One notes that this type of recursion is infinite--we can always keep following a ray through potentially-endless bounces; but
-    since more bounces weaken the resulting radiance contribution to our original point (due to our cosine and bsdf factors), we can truncate these paths at some point.
-    One way to do this is Russian Roulette, where there's a probability (around 0.3-0.4) that a path is terminated upon each bounce (although
-    if indirect lighting is enabled, we'll ensure each path bounces at least once.
-    <br>
-    The end algorithm is as follows: for an intersection point, we first find its emitted light (nonzero if the point lies on a light source). We'll then
-    find its direct illumination using the previous methods. Finally, we'll start exploring bounces off of this point, following those paths and
-    accumulating the direct light values at each bounce (note that if there's no bounce, i.e. the path doesn't intersect anything, then we terminate the path by default).
+    We can use a thin-lens approximation to simulate a camera with an ideal lens. This lens will have some given size
+    and focal distance, and these parameters will define our depth of field. Increasing the lens size, or aperture, will
+    shorten our depth-of-field, and increasing focal distance will push back the focal plane (where objects are in focus).
   </p>
 
-  <h3 align="middle">Results</h3>
+  <h3 align="middle">Focus Stack</h3>
   <p>
-    Here are some results.
+    The first five images show a 'focus stack' of different focal lengths. Aperture is kept at 0.5 to emphasize the focal plane.
+    As we move the focal point from the front of the scene backwards, note which areas come into focus: we start off with
+    the focal plane at front of the first ball, and end up at the back of the second ball. Note in particular how the edges
+    between walls comes into focus, and how the light in the ceiling becomes progressively blurred.
     <br>
-    Images a-b are examples of global lighting.
-    <br>
-    Images c-d break apart global lighting into its direct and indirect constituents. Notice reflections off the floor and walls are captured
-    in the indirect contribution.
-    <br>
-    Images e-j reflect changes in renderings over max_ray_depth values of 0, 1, 2, 3, 50, and 100 (where max_ray_depth is a hard cap
-    on the path length of bounces when calculating indirect light).
-    <br>
-    To conclude, we'll render a scene with spheres over varying sample/pixel rates, ranging from 1 to 1024.
+    All images were rendered with 256 samples/pixel, 4 samples/light, and max ray depth 5.
   </p>
 </div>
 
@@ -301,125 +373,47 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj3/4-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">4a. 64/16 samples/light rays pp, max ray depth 5.</figcaption>
+        <img src="images/proj32/focal2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4a. Focal distance = 4.1.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/4-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">4b. 64/16 samples/light rays pp, max ray depth 5. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj3/4-3.png" align="middle" width="400px"/>
-        <figcaption align="middle">4c. Direct lighting only.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/4-4.png" align="middle" width="400px"/>
-        <figcaption align="middle">4d. Indirect lighting only. </figcaption>
+        <img src="images/proj32/focal1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4b. Focal distance = 4.5. </figcaption>
       </td>
     </tr>
     </br>
     <tr>
       <td>
-        <img src="images/proj3/bunny0.png" align="middle" width="400px"/>
-        <figcaption align="middle">4e. 1024/16 samples/light rays pp, max ray depth 0.</figcaption>
+        <img src="images/proj32/focal0.png" align="middle" width="400px"/>
+        <figcaption align="middle">4c. Focal distance = 4.7.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/bunny1.png" align="middle" width="400px"/>
-        <figcaption align="middle">4f. 1024/16 samples/light rays pp, max ray depth 1. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj3/bunny2.png" align="middle" width="400px"/>
-        <figcaption align="middle">4g. 1024/16 samples/light rays pp, max ray depth 2.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/bunny3.png" align="middle" width="400px"/>
-        <figcaption align="middle">4h. 1024/16 samples/light rays pp, max ray depth 3. </figcaption>
+        <img src="images/proj32/focal-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4d. Focal distance = 4.9. </figcaption>
       </td>
     </tr>
     </br>
     <tr>
       <td>
-        <img src="images/proj3/bunny50.png" align="middle" width="400px"/>
-        <figcaption align="middle">4i. 1024/16 samples/light rays pp, max ray depth 50.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/bunny100.png" align="middle" width="400px"/>
-        <figcaption align="middle">4j. 1024/16 samples/light rays pp, max ray depth 100. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj3/s1.png" align="middle" width="400px"/>
-        <figcaption align="middle">4k. 1 sample/pixel.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/s2.png" align="middle" width="400px"/>
-        <figcaption align="middle">4l. 2 samples/pixel. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj3/s4.png" align="middle" width="400px"/>
-        <figcaption align="middle">4m. 4 samples/pixel.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/s8.png" align="middle" width="400px"/>
-        <figcaption align="middle">4n. 8 samples/pixel. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj3/s16.png" align="middle" width="400px"/>
-        <figcaption align="middle">4o. 16 samples/pixel.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/s64.png" align="middle" width="400px"/>
-        <figcaption align="middle">4p. 64 samples/pixel. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj3/s512.png" align="middle" width="400px"/>
-        <figcaption align="middle">4q. 512 samples/pixel.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj3/s1024.png" align="middle" width="400px"/>
-        <figcaption align="middle">4r. 1024 samples/pixel. </figcaption>
+        <img src="images/proj32/focal-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4e. Focal distance = 5.3.</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-  <h2 align="middle">Part V: Adaptive Sampling</h2>
-  <p>
-    Let's go back to the first part, where we generate rays shooting from the camera through pixels on the sensor plane. In our current
-    approach, we're sending some fixed number of sample rays through each pixel. Could this be made more efficient?
-    <br>
-    A key observation is that some or many pixels could have a constant or low-variance lighting values across its area. If a pixel projects
-    onto a wall in the scene, then any ray going through this pixel will probably give the same resulting light value. If a pixel projects into
-    nothing, then every sample going through this pixel will give no light. If this is the case, why bother continue sending sample rays when we already
-    know the value for this pixel?
-    <br>
-    In reality, it's difficult to truly know that we have a correct pixel value, as this would require lots of work mapping pixel areas to space in the scene.
-    Instead, we can simply keep a running average and variance of all the values seen so far from samples for a given pixel. Once this variance dips below
-    a certain threshold, then we can stop sampling for this pixel. The exact calculation is drawn from z-tests in statistics, and we'll stop sampling
-    a pixel once we know with 95% confidence that new samples won't significantly affect our current value.
-  </p>
 
-  <h3 align="middle">Results</h3>
+  <h3 align="middle">Aperture Stack</h3>
   <p>
-    Here's an image rendered using adaptive sampling, and it's corresponding heat map of samples/pixel (where blue is the lower bound and red is the upper bound).
+    These next four images show a gold dragon with different aperture sizes ranging from 0.01 to 0.5. The focal plane is
+    at the neck of the dragon.
+    As aperture goes toward 0, the more and more our model resembles a pinhole, and the larger the depth of field becomes.
+    With the first two images, note that the back walls get blurred. In the third image, the walls get blurred further, and
+    the tail of the dragon begins to drop out of focus. In the last image, with
+    the lens at 0.5, almost everything outside of the focal plane loses focus.
+    <br>
+    All images were rendered with 256 samples/pixel, 4 samples/light, and max ray depth 5.
   </p>
 </div>
 
@@ -427,12 +421,23 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj3/5-1.png" align="middle" height="400px"/>
-        <figcaption align="middle">5a. Bunny (taking 2048 samples/pixel).</figcaption>
+        <img src="images/proj32/focus2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4a. Aperture = 0.01.</figcaption>
       </td>
       <td>
-        <img src="images/proj3/5-2.png" align="middle" height="400px"/>
-        <figcaption align="middle">5b. Heap map.</figcaption>
+        <img src="images/proj32/focus1.png" align="middle" width="400px"/>
+        <figcaption align="middle">4b. Aperture = 0.125. </figcaption>
+      </td>
+    </tr>
+    </br>
+    <tr>
+      <td>
+        <img src="images/proj32/focus0.png" align="middle" width="400px"/>
+        <figcaption align="middle">4c. Aperture = 0.25.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj32/focus3.png" align="middle" width="400px"/>
+        <figcaption align="middle">4d. Aperture = 0.5. </figcaption>
       </td>
     </tr>
   </table>
