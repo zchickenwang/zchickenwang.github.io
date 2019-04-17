@@ -56,63 +56,33 @@
 
   <h2 align="middle">Overview</h2>
   <p> &emsp;
-    In the last project, we developed the fundamentals of ray-tracing; here, we'll expand on that foundation and build out
-    some different features.
-    <br>
-    We'll start off with generalizing to different surface interactions. By accounting for glossy and transparent materials,
-    we'll be able to render much more complex scenes with materials that are both common and visually rich.
-    <br>
-    Then we'll move to modeling microfacet materials, thus giving more detail to our surfaces. By changing microfacet parameters,
-    we'll be able to model a variety of different materials to a much finer degree.
-    <br>
-    Next we'll explore environment lighting, which gives the power to model scenes with natural light. We'll be able to capture and
-    use texture maps of different environments, placing objects realistically within them.
-    <br>
-    Lastly, we'll cover depth of field by expanding our camera model to adopt a thin-lens approximation. This will let us control
-    focus within our rendered images.
+
   </p>
 
-  <h2 align="middle">Part I: Mirror and Glass Materials </h2>
+  <h2 align="middle">Part I: Masses and Springs </h2>
 
-  <h3 align="middle">Ray Generation</h3>
+  <h3 align="middle">Physics</h3>
 
-  <p>&emsp;First we'll complete the implementations of reflective and transparent surfaces. Perfect reflection means
-  the incoming and outgoing rays are mirrors of each other across the surface normal. With refraction, we first use
-    Schlick's Approximation of the Fresnel term to decide between following the path of reflection or transmission.
-    If it's the latter, then we can find the refracted direction using Snell's Law.
+  <p>&emsp;We're going to represent our cloth using a wireframe of particles which are interconnected via springs. These
+    particles are masses which have position and are affected by forces; we'll construct them by filling the cloth's dimensions
+    with evenly-spaced masses according to a predefined resolution. Then we'll add spring relationships between pairs of masses.
+    These relationships belong to three types: (1) structural constraints between immediately adjacent masses, (2) shearing constraints
+    between immediately diagonal masses, and (3) bending constraints between masses which are 2 masses away from each other. Together,
+    these three constraint types form a simplified model of real cloth physics.
   </p>
 
   <h3 align="middle">Results</h3>
   <p>
-    Here's a scene with a mirror and glass ball. We'll cap the max ray depth at certain levels to see what artifacts
-    successive bounces will introduce.
+    Here's a scene with rectangular cloth wireframe. The spring constraints are visualized as lines connecting pairs of particles.
     <br>
-    At 0 depth, only light which is emitted directly into the camera will be captured. This is the light in the ceiling.
+    The first two images show our wireframe from a distant and closer perspective.
     <br>
-    At depth 1, rays from the light source can bounce once (on the walls, floor, etc.) before arriving at the camera.
-    Thus, the room gets illuminated. Note however the ceiling remains dark, as well as the two balls (whose irradiance
-    depends on further bounces of either reflection or refraction).
+    To understand the differences between constraint types, we can turn off all constraints except shearing relationships, which are
+    shown in the third image.
     <br>
-    At depth 2, the ceiling is illuminated because rays can bounce first off the rest of the room, go back to the ceiling,
-    then go toward the camera. The mirror ball becomes reflective for the same reasons, and the glass ball is partly-illuminated
-    from rays which reflect into the light, as well as ones which come from the light source and refract twice to go through the ball.
+    Image four, then, reveals all forces other than shearing: namely, structural and bending constraints (which overlap with one another).
     <br>
-    At depth 3, we get to see the transmission rays which go through the mirror ball and hit some diffuse surface before arriving
-    at the light source. This significantly illuminates the glass ball. We also see the specular reflection on the glass ball on the
-    mirror ball's surface.
-    <br>
-    At depth 4, the glass ball's reflection in the mirror ball turns bluish because light rays that bounce off the blue wall, trasmit
-    through the glass ball, and then reflect off the mirror ball into the camera take 4 bounces. We can also see a bright spot underneath
-    the glass ball--this is the reflection of the source light off of the mirror ball. These reflections transmit through the glass ball
-    onto the floor.
-    <br>
-    At depth 5, the floor reflection underneath the glass ball becomes visible in it's mirror image. This reflection can also
-    reflect further off of the right wall before hitting the camera, so a light becomes visible there.
-    <br>
-    Past depth 5, improvements begin to diminish. Later depths add more smoothness and account for more and more of the
-    infinitely-recursive light rays.
-    <br>
-    These renderings use 256 samples/pixel and 4 samples/light.
+    Finally, we can juxtapose images c and d to get another look at the original, full view wireframe in image e.
   </p>
 </div>
 
@@ -120,192 +90,82 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj32/spheres0x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1a. Max ray depth = 0.</figcaption>
+        <img src="images/proj4/1-1.png" align="middle" width="400px"/>
+        <figcaption align="middle">1a. Wireframe with all constraints.</figcaption>
       </td>
       <td>
-        <img src="images/proj32/spheres1x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1b. Max ray depth = 1.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj32/spheres2x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1c. Max ray depth = 2.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/spheres3x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1d. Max ray depth = 3.</figcaption>
+        <img src="images/proj4/1-1z.png" align="middle" width="400px"/>
+        <figcaption align="middle">1b. Wireframe with all constraints.</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/proj32/spheres4x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1e. Max ray depth = 4.</figcaption>
+        <img src="images/proj4/1-s.png" align="middle" width="400px"/>
+        <figcaption align="middle">1c. Shearing constraints only.</figcaption>
       </td>
       <td>
-        <img src="images/proj32/spheres5x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1f. Max ray depth = 5.</figcaption>
+        <img src="images/proj4/1-ns.png" align="middle" width="400px"/>
+        <figcaption align="middle">1d. Non-shearing constraints only.</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/proj32/spheres100x.png" align="middle" width="400px"/>
-        <figcaption align="middle">1g. Max ray depth = 100.</figcaption>
+        <img src="images/proj4/1-sns.png" align="middle" width="400px"/>
+        <figcaption align="middle">1e. Both shearing and non-shearing.</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-  <h2 align="middle">Part II: Microfacet Materials</h2>
+  <h2 align="middle">Part II: Simulation via Numerical Integration</h2>
   <p>
-    In order to penetrate the next level of realism, we need to implement microfacet surfaces, or surfaces
-    which have minute abberations which follow certain distributions depending on the surface material.
+    Now that we have a model of masses and springs, we need to implement time-passing by using Newton's laws to model how
+    the cloth wireframe changes over time due to forces.
   </p>
 
-  <h3 align="middle">Roughness</h3>
+  <h3 align="middle">Algorithm</h3>
   <p>
-    Let's introduce a term alpha indicating the level of smoothness for a isotropic conductor which only reflects.
-    As we vary alpha, we can see a mock-gold material change from diffuse to glossy.
+    There are two types of forces we'll consider: external forces like gravity, and spring correction forces from the
+    various spring constraints.
     <br>
-    The first dragon looks very diffuse: light is spread across the surface, and there are no distinct specular reflections.
-    As we turn down alpha, the radiance from reflected light appears in smaller and smaller areas, converging toward a pure
-    reflection off the dragon's surface. Furthermore, areas which once reflected light at grazing angles no longer reflect
-    toward the light source, but rather out along their surface normal toward the viewer. Since the camera is an empty black
-    space, we can see surfaces perpendicular to the camera vector turn dark.
+    We'll first accumulate all the acceleration incumbent on each particle, from both external and spring forces. Each spring
+    follows F = ks*dd, where ks is a spring constant and dd is the distance that the spring is stretched (in other words,
+    the delta between the spring's rest length and it's current length).
     <br>
-    These images were rendered with 128 samples/pixel, 4 samples/light, and a max ray depth of 5.
-  </p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj32/d0.png" align="middle" width="400px"/>
-        <figcaption align="middle">2a. alpha = 0.5.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/d1.png" align="middle" width="400px"/>
-        <figcaption align="middle">2b. alpha = 0.25.</figcaption>
-      </td>
-    </tr>
+    We then use Verlet integration (for it's simplicity) to translate force into changes in position. Specifically, given a
+    time delta dt, our particle position moves according to the equation x_(t+dt) = x_(t) + v*dt + a*dt^2, where v and a
+    are velocity and acceleration, respectively. We'll get acceleration from the forces calculated previously, and approximate
+    velocity by interpolating between a particle's previous two positions. Lastly, we'll add a rough damping constant to
+    approximate real-life dissipation of energy via friction and heat.
     <br>
-    <tr>
-      <td>
-        <img src="images/proj32/d2.png" align="middle" width="400px"/>
-        <figcaption align="middle">2c. alpha = 0.05.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/d3.png" align="middle" width="400px"/>
-        <figcaption align="middle">2d. alpha = 0.005.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="text">
-  <h3 align="middle">Sampling</h3>
-  <p>
-    If our microfacet material was perfectly diffuse, then the existing cosine hemisphere sampling approach
-    would work well. However, if we model the material's surface normal distribution as non-uniform, like with our
-    Beckmann distribution, then importance sampling becomes more efficient.
-    <br>
-    Observing the copper bunnies below shows the difference between cosine hemisphere and importance sampling. In cosine hemisphere
-    sampling, many sampled directions will not be valid (hence all the black). With importance
-    sampling, we emphasize reflection directions which have high contribution to a point's irradiance. In this way,
-    the microfacet surface becomes clearer and smoothed out.
-    <br>
-    These images were rendered with 64 samples/pixel, 1 sample/light, and max ray depth 7.
-  </p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj32/noncos.png" align="middle" width="400px"/>
-        <figcaption align="middle">2e. Cosine hemisphere sampling.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/cos.png" align="middle" width="400px"/>
-        <figcaption align="middle">2f. Importance sampling.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div class="text">
-  <h3 align="middle">Materials</h3>
-  <p>
-    These materials can be defined by their indices of refraction and extinction coefficient at the three major
-    visible wavelengths (S/M/L, or R/G/B).
-    <br>
-    In this way, we can introduce new materials fairly easily, like Chromium (see images)! Note that the dragon
-    looks pretty similar as we didn't change alpha. In 2h, we reduce alpha to 0.01 so the surface appears more glossy.
-    <br>
-    These images were rendered with 128 samples/pixel, 4 samples/light, and max ray depth 5.
-  </p>
-</div>
-
-<div align="middle">
-  <table style="width=1000px, margin=auto">
-    <tr>
-      <td>
-        <img src="images/proj32/chromed.png" align="middle" width="400px"/>
-        <figcaption align="middle">2g. Chromium dragon.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/chromeb.png" align="middle" width="400px"/>
-        <figcaption align="middle">2h. Chromium bunny.</figcaption>
-      </td>
-    </tr>
-  </table>
-</div>
-
-
-<div class="text">
-  <h2 align="middle">Part III: Environment Light</h2>
-  <p>
-    In the real world, light is often driven not by specific light sources, but by the sky itself, and sun rays'
-    infinite bounces across the sky. To model this, we can use our environment as a light source itself, one that
-    is infinitely far away. Once we place objects within an environment, its lighting will contribute to irradiance
-    on those objects. Environment light allows us to create much more realistic natural-light images, and also
-    allows using texture maps to define the lighting of a scene.
-  </p>
-
-  <h3 align="middle">Sampling</h3>
-  <p>
-    &emsp;Here as well, sampling comes into play. Uniform hemisphere sampling works best when our texture map has relatively
-    uniform environment lighting. In order to generalize toward all environment light distributions, we can use importance
-    sampling on the environment light to emphasize directions which have high radiance.
-    <br>
-    To do importance sampling, we weight each texel on the environment map by its light value. We can then use 2 random
-    numbers to index into the 2d map space, picking indices probabilistically. To do this, we create discrete,
-    cumulative distribution functions across the rows of the texture map, and ones for the columns in each row. Given a random
-    number, then, we find the index whose cumulative probability first becomes greater than our number.
+    One final optimization, borrowed from the SIGGRAPH 1995 Provot paper, constrains spring constraints even further by asserting
+    a global limit on how much a spring can be stretched (here we'll use 10%). If the particles on two ends of a spring get
+    pulled beyond this distance, we'll bring the particles back within 10% of the rest length. Note that pinned particles' positions
+    are unaffected throughout this process.
   </p>
 
   <h3 align="middle">Results</h3>
   <p>
-    The first two images show our chosen environment map and its corresponding probability distribution heatmap.
+    Here are some results of our simulation. We can vary the input constants like ks, cloth density, and damping to get
+    interesting changes. The default parameters are ks = 5000 N/m, density = 15 g/cm^2, damping = 0.2%.
     <br>
-    The next four show the difference between uniform hemisphere and importance sampling of the environment lights.
+    As we make ks larger, we increase the spring's internal forces and thus make it more difficult to bend or pull the spring.
+    Since our external forces stay constant, this means the cloth will be pulled more tautly together and exhibit less folding.
+    This is exactly what we see, and we elaborate on ks later on as well.
     <br>
-    In 3c-d, we see importance sampling greatly reduces noise on the platform surface (which, excluding the specular reflections
-    on the bunny, compose some of the brightest areas in the image). The bunny's countours are smoothed out, however the dark
-    areas remain noisy.
+    Changing density has a similar effect--as the cloth becomes more dense, there are more springs with fewer distance between
+    them. This means small changes in the spring are going to be displayed, and more folding occurs at more granular levels. We also
+    explore density later on.
     <br>
-    In 3e-f, we see how environment light sampling acts in tandem with microfacet materials. While importance sampling reduces
-    the amount of noise in light areas (on both the platform and bunny), it exacerbates noise in the shadows. This makes sense
-    because we sample the light areas more, so shadows become represented by too few samples, which means each of these samples ends
-    up carrying too much weight--thus we see the stark contrast in the shadows. The reflectivity of the surface further adds noise.
+    As we adjust damping, we let more or less force dissipate rather than be expressed in spring constraints. Thus, very low damping
+    means all the forces are used to interact with springs, and we see lots of minute folding in the cloth. With high damping, these
+    minute changes are largely mitigated, and we only see larger, more general folding in the cloth.
     <br>
-    All images were rendered with 4 samples/pixel, 64 samples/light, and max ray depth 5.
+    Finally, the last image shows a cloth (using default parameters) which has all four corners pinned. After we let the simulation
+    roughly converge, this is how the cloth's normal map looks.
   </p>
 </div>
 
@@ -313,59 +173,177 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj32/ennis.jpg" align="middle" width="400px"/>
-        <figcaption align="middle">3a. Environment map.</figcaption>
+        <img src="images/proj4/2-lks.png" align="middle" width="400px"/>
+        <figcaption align="middle">4c. default.</figcaption>
       </td>
       <td>
-        <img src="images/proj32/pdennis.png" align="middle" width="400px"/>
-        <figcaption align="middle">3b. Environment light probability distribution.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/proj32/uniform.png" align="middle" width="400px"/>
-        <figcaption align="middle">3c. No microfacet, uniform hemisphere sampling.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/importance.png" align="middle" width="400px"/>
-        <figcaption align="middle">3d. No microfacet, importance sampling.</figcaption>
+        <img src="images/proj4/2-hks.png" align="middle" width="400px"/>
+        <figcaption align="middle">4d. ks = 50,000 (high).</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/proj32/uniform1.png" align="middle" width="400px"/>
-        <figcaption align="middle">3e. Copper microfacet, uniform hemisphere sampling.</figcaption>
+        <img src="images/proj4/2-ld.png" align="middle" width="400px"/>
+        <figcaption align="middle">4c. density = 5 (low).</figcaption>
       </td>
       <td>
-        <img src="images/proj32/importance1.png" align="middle" width="400px"/>
-        <figcaption align="middle">3f. Copper microfacet, importance sampling.</figcaption>
+        <img src="images/proj4/2-hd.png" align="middle" width="400px"/>
+        <figcaption align="middle">4d. density = 50 (high).</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/2-lda.png" align="middle" width="400px"/>
+        <figcaption align="middle">4e. damping = 0%.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/2-hda.png" align="middle" width="400px"/>
+        <figcaption align="middle">4f. damping = 100%.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/2-p4.png" align="middle" width="400px"/>
+        <figcaption align="middle">4g. 4-pinned cloth, default parameters.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<div class="text">
+  <h2 align="middle">Part III: Collisions with Other Objects</h2>
+  <p>
+    Rendering cloth on it's own is rather limited; we'd like for it to interact realistically with other types of objects
+    in the model.
+  </p>
+
+  <h3 align="middle">Spheres and Planes</h3>
+  <p>
+    We'll implement interaction between the cloth and two primitives: spheres and planes.
+    <br>
+    The basic premise behind collisions is that we don't want the cloth to pass through certain surfaces. So collision
+    handing involves (1) detecting collisions and (2) updating particle positions.
+    <br>
+    With spheres, we can check to see if the distance between a particle and the sphere's center is within radius length. If
+    so, then we need to push the particle back out, so we can find the vector from the center to the particle,
+    and move the particle along that direction until it is distance radius + some offset away from the center.
+    <br>
+    With planes, we can determine collisions by comparing the dot product of the plane normal with vectors pointing to
+    the current and previous position of each particle. If these positions lie on different sides of the plane, then their
+    dot products will have different signs. We also make sure to take care of the case when a point happens to be orthogonal
+    w.r.t. the normal, i.e. on the plane itself.
+    <br>
+    If a collision is found, we'll find the point's orthogonal projection onto the plane, and use that as a marker for
+    the corrected position. I say marker because we'll apply factors related to friction and useful offsets, which update
+    the position to be in the vicinity of our marker.
+    <br>
+    Once these handlers have been implemented, we incorporate them into the simulation by checking every particle against
+    every collision object in each step (this can be optimized using some spatial data structure). We'll do this after integration, but
+    before the Provot correction.
+  </p>
+
+  <h3 align="middle">Results</h3>
+  <p>
+    The first three images depict a cloth resting atop a sphere. We vary the spring constant ks between 500 and 50,000 N/m,
+    and the cloth adjusts as a result. Like before, we can see how ks makes spring constraints stronger and weaker--with a low ks of 500,
+    gravity is stronger relative to the spring forces, and the cloth gets dragged down more and becomes more tensile (exhibiting more folding).
+    As ks goes up, we see the spring forces getting stronger, and pulling the cloth more taut, more close together as external forces
+    diminish in relative strength.
+    <br>
+    Images d and e shows a cloth which starts in the air above a plane and which falls down to rest on that plane. Thanks to our offset
+    and careful collision detection scheme, there are little to no artifacts of the cloth peeking through to the other side of the plane.
+    The last image is the same cloth and plane scene, but with a texture applied.
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj4/3-500.png" align="middle" width="400px"/>
+        <figcaption align="middle">3a. ks = 500.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/3-5000.png" align="middle" width="400px"/>
+        <figcaption align="middle">3b. ks = 5,000.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/3-50000.png" align="middle" width="400px"/>
+        <figcaption align="middle">3c. ks = 50,000.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/3-b.png" align="middle" width="400px"/>
+        <figcaption align="middle">3d. Cloth in air above plane.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/3-a.png" align="middle" width="400px"/>
+        <figcaption align="middle">3e. Cloth resting on plane.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/3-c.png" align="middle" width="400px"/>
+        <figcaption align="middle">3f. Textured cloth resting on plane.</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-  <h2 align="middle">Part IV: Depth of Field</h2>
+  <h2 align="middle">Part IV: Self-Collisions</h2>
   <p>
-    &emsp;So far we've been relying on a pinhole model of a camera. This means the world gets focused through a hole
-    onto the image plane. In this way, everything is in focus, and we do not have depth of field. In order to
-    leverage more advanced focus techniques, we'll need to adapt our model.
-    <br>
-    We can use a thin-lens approximation to simulate a camera with an ideal lens. This lens will have some given size
-    and focal distance, and these parameters will define our depth of field. Increasing the lens size, or aperture, will
-    shorten our depth-of-field, and increasing focal distance will push back the focal plane (where objects are in focus).
+    But even after handling external collisions, our cloth simulator has a serious flaw--when cloth falls on top
+    of itself, the whole wireframe collapses and folds onto itself. Instead, we'd like the cloth to collide with
+    itself realistically, and to visually have some nonzero thickness.
   </p>
 
-  <h3 align="middle">Focus Stack</h3>
+  <h3 align="middle">Algorithm</h3>
   <p>
-    The first five images show a 'focus stack' of different focal lengths. Aperture is kept at 0.5 to emphasize the focal plane.
-    As we move the focal point from the front of the scene backwards, note which areas come into focus: we start off with
-    the focal plane at front of the first ball, and end up at the back of the second ball. Note in particular how the edges
-    between walls comes into focus, and how the light in the ceiling becomes progressively blurred.
+    While we could do brute-force checking between particles and collision objects (since our scenes have few collision
+    objects), doing the same quadratic-time comparing of particles with themselves is too inefficient.
     <br>
-    All images were rendered with 256 samples/pixel, 4 samples/light, and max ray depth 5.
+    Instead we'll split the space up into buckets of a certain size (such that each bucket ends up with around 5-20 particles),
+    and build a hash function which easily maps particle positions to buckets. Then every iteration, we'll first construct this map,
+    and then iterate through all the points, querying the map to find a set of their close neighbors (points in the same bucket).
+    This way, we only check neighbors around a certain radius (roughly speaking), and thus cut down our time to something closer
+    to linear (b*n where b = avg bucket size and n = number of particles).
+    <br>
+    In each check, we make sure particles in the same cloth mesh are at least 2*tk apart, where tk is the thickness of the cloth.
+    If we're checking a point against its neighbors and the distance between it and a neighbor is less than 2*tk, then we must
+    adjust the current point's position and move it in the opposite direction of that neighbor, such that their distance is
+    at least 2*tk. But since a point may collide with several neighbors, we'll wait till after accumulating correction
+    vectors from all neighbors before applying their average as an update to the point's position.
+    <br>
+    We'll make sure to not check for a particle's self-collision with itself. This case can be caught using one of the particle's
+    unique identifiers, like start position, or current position.
+    <br>
+    We'll also handle self-collisions before external collisions.
+  </p>
+
+  <h3 align="middle">Results</h3>
+  <p>
+    The first set of four images depict a cloth falling on top of itself at different times. Note how the cloth exhibits self-collision
+    handling: it doesn't collapse into itself, and clipping artifacts are rare. Due to our rough damping estimator, the cloth will
+    continue to seek equilibrium until it is completely flat on the plane--this true, final state is not captured but one can imagine
+    the cloth slowly converging to such a state.
+    <br>
+    These were computed with a ks of 5,000 and density of 15. ks has units N/m and density g/cm^2!
+    <br>
+    The next set of images show what happens when we adjust ks and density. Like before, making ks smaller in turn weakens spring forces,
+    so we can see the cloth becoming more tensile and "thin". Making ks larger tightens up the cloth and reduces the amount of folding, since
+    folding requires springs to be bent. Likewise, adjusting density means changing the granularity at which the cloth interacts with itself.
+    More density results in more fine-grained changes and folds, since now the springs that need to be bent are smaller.
   </p>
 </div>
 
@@ -373,47 +351,82 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj32/focal2.png" align="middle" width="400px"/>
-        <figcaption align="middle">4a. Focal distance = 4.1.</figcaption>
+        <img src="images/proj4/4-0b.png" align="middle" width="400px"/>
+        <figcaption align="middle">4a. Time stop 0.</figcaption>
       </td>
       <td>
-        <img src="images/proj32/focal1.png" align="middle" width="400px"/>
-        <figcaption align="middle">4b. Focal distance = 4.5. </figcaption>
-      </td>
-    </tr>
-    </br>
-    <tr>
-      <td>
-        <img src="images/proj32/focal0.png" align="middle" width="400px"/>
-        <figcaption align="middle">4c. Focal distance = 4.7.</figcaption>
-      </td>
-      <td>
-        <img src="images/proj32/focal-1.png" align="middle" width="400px"/>
-        <figcaption align="middle">4d. Focal distance = 4.9. </figcaption>
+        <img src="images/proj4/4-2.png" align="middle" width="400px"/>
+        <figcaption align="middle">4b. Time stop 1.</figcaption>
       </td>
     </tr>
-    </br>
+    <br>
     <tr>
       <td>
-        <img src="images/proj32/focal-2.png" align="middle" width="400px"/>
-        <figcaption align="middle">4e. Focal distance = 5.3.</figcaption>
+        <img src="images/proj4/4-5.png" align="middle" width="400px"/>
+        <figcaption align="middle">4c. Time stop 2.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/4-8.png" align="middle" width="400px"/>
+        <figcaption align="middle">4d. Time stop 3.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/5-lks" align="middle" width="400px"/>
+        <figcaption align="middle">4e. low ks of 500.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-hks" align="middle" width="400px"/>
+        <figcaption align="middle">4f. high ks of 50,000.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/5-ld.png" align="middle" width="400px"/>
+        <figcaption align="middle">4g. low density of 5.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-hd.png" align="middle" width="400px"/>
+        <figcaption align="middle">4h. high density of 50.</figcaption>
       </td>
     </tr>
   </table>
 </div>
 
 <div class="text">
-
-  <h3 align="middle">Aperture Stack</h3>
+  <h2 align="middle">Part V: Shaders</h2>
   <p>
-    These next four images show a gold dragon with different aperture sizes ranging from 0.01 to 0.5. The focal plane is
-    at the neck of the dragon.
-    As aperture goes toward 0, the more and more our model resembles a pinhole, and the larger the depth of field becomes.
-    With the first two images, note that the back walls get blurred. In the third image, the walls get blurred further, and
-    the tail of the dragon begins to drop out of focus. In the last image, with
-    the lens at 0.5, almost everything outside of the focal plane loses focus.
+    Once we have our model and simulation worked out, it's time to apply a shader. Shader programs take in what we've constructed so far,
+    a series of particles (as vertices) and properties about the scene, and outputs pixel values to the screen buffer as a result.
     <br>
-    All images were rendered with 256 samples/pixel, 4 samples/light, and max ray depth 5.
+    We'll use OpenGL to build our shaders, as their platform is more efficient than ours. OpenGl shaders execute in two phases:
+    vertex shaders and fragment shaders.
+    <br>
+    Vertex shaders take in the model's vertices and details about each vertex like color and normal (these are called attributes)
+    , as well as details about the scene like lighting and texture (these are called uniforms). The vertex shader is responsible
+    for updating these attributes of vertices, as well as outputting them as input to the fragment shaders (these outputs are called
+    varyings). The fragment shader takes the per-vertex values of the vertex shader and interpolates them into per-pixel values. For example,
+    it can use barycentric coordinates to interpolate between a pixel's polygon vertices, computing parameters like color and normal. These can
+    then be used to output a final color value.
+
+  </p>
+
+  <h3 align="middle">Blinn-Phong</h3>
+  <p>
+    One shader we implement is Blinn-Phong shading, which approximates realistic lighting using three core components: ambient, diffuse, and
+    specular lighting. Ambient lighting is a uniform light across the whole scene, and seeks to capture the effects of light typically
+    bouncing often enough to create a sense of ambient lighting. Diffuse lighting represents the diffuse part of surface texture, which reflects
+    light based on the angle between the light source and surface normal. Specular lighting, on the other hand, reflects
+    rays from a light source in a mirror-like symmetrical direction. In this way, it computes light based on the angle between [the half-angle of
+    view and light source direction] and [the surface normal]. When these two directions are close, there's a higher specular contribution.
+  </p>
+
+  <h3 align="middle">Results</h3>
+  <p>
+    In these images, we see a scene of a cloth and sphere under Blinn-Phong shading. We'll show each component separately, then
+    the final composed image.
   </p>
 </div>
 
@@ -421,23 +434,142 @@
   <table style="width=1000px, margin=auto">
     <tr>
       <td>
-        <img src="images/proj32/focus2.png" align="middle" width="400px"/>
-        <figcaption align="middle">4a. Aperture = 0.01.</figcaption>
+        <img src="images/proj4/5-all.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Blinn-Phong shading.</figcaption>
       </td>
       <td>
-        <img src="images/proj32/focus1.png" align="middle" width="400px"/>
-        <figcaption align="middle">4b. Aperture = 0.125. </figcaption>
+        <img src="images/proj4/5-amb.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Ambient light only.</figcaption>
       </td>
     </tr>
-    </br>
+    <br>
     <tr>
       <td>
-        <img src="images/proj32/focus0.png" align="middle" width="400px"/>
-        <figcaption align="middle">4c. Aperture = 0.25.</figcaption>
+        <img src="images/proj4/5-diff.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Diffuse light only.</figcaption>
       </td>
       <td>
-        <img src="images/proj32/focus3.png" align="middle" width="400px"/>
-        <figcaption align="middle">4d. Aperture = 0.5. </figcaption>
+        <img src="images/proj4/5-spec.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Specular light only.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+  <h3 align="middle">Texture Mapping</h3>
+  <p>
+    By passing along uv-coordinates as Barycentric coordinates to the shader, we can map textures onto the cloth. This process
+    is exactly the same as what we did in project 1; see below for an example of a sphere mapped with an album cover.
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj4/5-tex1.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Before.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-tex2.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. After.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+  <h3 align="middle">Bump and Displacement Mapping</h3>
+  <p>
+    We can create algorithmic textures on the cloth as well. In bump mapping, we change the output color by using a custom
+    normal calculator in the fragment shader. To model bumps, we can estimate the rate of change of the normal at a position
+    using its color values as a heuristic (color values here coming from a texture).
+    As the normal changes, the resulting Blinn-Phong output changes as well, and we get
+    this bump pattern on the cloth.
+    <br>
+    However, just creating a pattern means the color is affected, but not the shape of the cloth itself. To make our bumps
+    more realistic, we can adjust the particle positions along with their surface normals. This is called displacement
+    mapping, and it can conveniently be done in the vertex shader!
+    We use the same heuristic as before, used to estimate changes in surface normal. This heuristic is now also used to physically
+    bump particle positions up along the direction of its original surface normal. These new positions are then fed to the fragment shader,
+    which applies the same bump shading as before.
+  </p>
+
+  <h3 align="middle">Results</h3>
+  <p>
+    The first two images show examples of bump and displacement mapping. We then change the sphere mesh's coarseness for
+    each of the two shaders, and compare the results.
+    <br>
+    As the sphere's coarseness varies, so too does the coarseness of our bumps. In the finely coarsed 128 by 128 mesh,
+    the normal variations that form our bumps are very fine-grained: this is most visible in the displacement mapped sphere.
+    This effect makes sense, since we're adjusting the cloth particles based on the resolution of the surface of the sphere.
+    While these photos are not super clear, the difference in bump mapping is also visible between coarseness values, mostly
+    in how much detail is given to the bumps (i.e. how closely the bumps match the texture).
+    <br>
+    We use height constant of 10 and normal constant of 0.2. Any differences in the shape is due to timing of screen capture.
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj4/5-bum1.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Default bump mapping.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-dis1.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Default displacement mapping.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/5-bum2.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. 16x16 bump mapping.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-dis2.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. 16x16 displacement mapping.</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/proj4/5-bum3.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. 128x128 bump mapping.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-dis3.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. 128x128 displacement mapping.</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="text">
+  <h3 align="middle">Mirror</h3>
+  <p>
+    Another cool shader is making surfaces behave like mirrors. For this, we'll need some sort of environment map which gives
+    color values for the environment in every direction (approximating scene objects at infinite distance).
+    <br>
+    The calculations can be done fairly easily--we find the viewing angle between a point and the camera. We then reflect
+    this angle across the surface normal, and query the environment map for that direction. This will tell us what the
+    mirror should reflect at that point. See below for examples.
+  </p>
+</div>
+
+<div align="middle">
+  <table style="width=1000px, margin=auto">
+    <tr>
+      <td>
+        <img src="images/proj4/5-mir1.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. Before.</figcaption>
+      </td>
+      <td>
+        <img src="images/proj4/5-mir2.png" align="middle" width="400px"/>
+        <figcaption align="middle">5. After.</figcaption>
       </td>
     </tr>
   </table>
